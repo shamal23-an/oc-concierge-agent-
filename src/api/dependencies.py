@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 logger = structlog.get_logger()
 
+# ── Client singletons (created once, reused across requests) ─────────────── #
 
 async def init_clients(app: FastAPI) -> None:
     """Create async clients and store them on app.state."""
