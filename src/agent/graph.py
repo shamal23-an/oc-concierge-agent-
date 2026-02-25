@@ -4,8 +4,8 @@ from functools import partial
 
 import structlog
 from langgraph.graph import END, StateGraph
-from qdrant_client import QdrantClient
-from redis import Redis
+from qdrant_client import AsyncQdrantClient
+from redis.asyncio import Redis
 
 from src.agent.nodes import generate_node, resolve_node, retrieve_node
 from src.domain.schemas import AgentState
@@ -22,7 +22,7 @@ def _should_skip_retrieval(state: AgentState) -> str:
 
 def build_graph(
     *,
-    qdrant_client: QdrantClient,
+    qdrant_client: AsyncQdrantClient,
     redis_client: Redis,
 ) -> StateGraph:
     """Build the LangGraph state machine.
@@ -32,7 +32,7 @@ def build_graph(
     """
     graph = StateGraph(AgentState)
 
-    # Bind clients to node functions
+    # Bind async clients to async node functions
     resolve_fn = partial(resolve_node, redis_client=redis_client)
     retrieve_fn = partial(
         retrieve_node, qdrant_client=qdrant_client, redis_client=redis_client,
@@ -59,7 +59,7 @@ def build_graph(
 
 def create_agent(
     *,
-    qdrant_client: QdrantClient,
+    qdrant_client: AsyncQdrantClient,
     redis_client: Redis,
 ):
     """Create a compiled LangGraph agent."""

@@ -4,7 +4,7 @@ import json
 import uuid
 
 import structlog
-from redis import Redis
+from redis.asyncio import Redis
 
 from src.config.constants import MAX_CONVERSATION_HISTORY
 from src.config.settings import get_settings
@@ -54,10 +54,10 @@ def _session_key(session_id: str) -> str:
     return f"session:{session_id}"
 
 
-def load_session(redis_client: Redis, session_id: str | None) -> SessionData:
+async def load_session(redis_client: Redis, session_id: str | None) -> SessionData:
     """Load session from Redis or create a new one."""
     if session_id:
-        raw = redis_client.get(_session_key(session_id))
+        raw = await redis_client.get(_session_key(session_id))
         if raw:
             try:
                 data = json.loads(raw)
@@ -71,11 +71,11 @@ def load_session(redis_client: Redis, session_id: str | None) -> SessionData:
     return SessionData(session_id=new_id)
 
 
-def save_session(redis_client: Redis, session: SessionData) -> None:
+async def save_session(redis_client: Redis, session: SessionData) -> None:
     """Save session to Redis with TTL."""
     settings = get_settings()
     key = _session_key(session.session_id)
-    redis_client.setex(
+    await redis_client.setex(
         key,
         settings.session_ttl_seconds,
         json.dumps(session.to_dict()),

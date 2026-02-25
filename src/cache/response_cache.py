@@ -4,7 +4,7 @@ import hashlib
 import json
 
 import structlog
-from redis import Redis
+from redis.asyncio import Redis
 
 from src.config.constants import RESPONSE_CACHE_TTL, RETRIEVAL_CACHE_TTL
 from src.domain.schemas import RetrievedChunk
@@ -30,7 +30,7 @@ def _build_cache_key(message: str, property_id: str | None, scope: str) -> str:
 # ── Response cache ────────────────────────────────────────────────────────── #
 
 
-def get_cached_response(
+async def get_cached_response(
     redis: Redis,
     message: str,
     property_id: str | None,
@@ -39,7 +39,7 @@ def get_cached_response(
     """Look up a cached full response. Returns None on miss."""
     key = _RESPONSE_PREFIX + _build_cache_key(message, property_id, scope)
     try:
-        data = redis.get(key)
+        data = await redis.get(key)
     except Exception:
         logger.warning("response_cache_read_error", key=key)
         return None
@@ -51,7 +51,7 @@ def get_cached_response(
     return json.loads(data)
 
 
-def set_cached_response(
+async def set_cached_response(
     redis: Redis,
     message: str,
     property_id: str | None,
@@ -64,7 +64,7 @@ def set_cached_response(
     key = _RESPONSE_PREFIX + _build_cache_key(message, property_id, scope)
     payload = json.dumps({"response": response, "sources": sources})
     try:
-        redis.setex(key, RESPONSE_CACHE_TTL, payload)
+        await redis.setex(key, RESPONSE_CACHE_TTL, payload)
         logger.debug("response_cache_set", key=key, ttl=RESPONSE_CACHE_TTL)
     except Exception:
         logger.warning("response_cache_write_error", key=key)
@@ -73,7 +73,7 @@ def set_cached_response(
 # ── Retrieval cache ──────────────────────────────────────────────────────── #
 
 
-def get_cached_retrieval(
+async def get_cached_retrieval(
     redis: Redis,
     message: str,
     property_id: str | None,
@@ -82,7 +82,7 @@ def get_cached_retrieval(
     """Look up cached retrieval chunks. Returns None on miss."""
     key = _RETRIEVAL_PREFIX + _build_cache_key(message, property_id, scope)
     try:
-        data = redis.get(key)
+        data = await redis.get(key)
     except Exception:
         logger.warning("retrieval_cache_read_error", key=key)
         return None
@@ -94,7 +94,7 @@ def get_cached_retrieval(
     return json.loads(data)
 
 
-def set_cached_retrieval(
+async def set_cached_retrieval(
     redis: Redis,
     message: str,
     property_id: str | None,
@@ -106,7 +106,7 @@ def set_cached_retrieval(
     key = _RETRIEVAL_PREFIX + _build_cache_key(message, property_id, scope)
     payload = json.dumps(chunks)
     try:
-        redis.setex(key, RETRIEVAL_CACHE_TTL, payload)
+        await redis.setex(key, RETRIEVAL_CACHE_TTL, payload)
         logger.debug("retrieval_cache_set", key=key, ttl=RETRIEVAL_CACHE_TTL)
     except Exception:
         logger.warning("retrieval_cache_write_error", key=key)

@@ -3,9 +3,9 @@ from __future__ import annotations
 import time
 
 import structlog
-from fastapi import APIRouter, Depends
-from qdrant_client import QdrantClient
-from redis import Redis
+from fastapi import APIRouter
+from qdrant_client import AsyncQdrantClient
+from redis.asyncio import Redis
 
 from src.agent.graph import create_agent
 from src.api.dependencies import get_qdrant_client, get_redis_client
@@ -17,13 +17,17 @@ router = APIRouter()
 
 
 @router.post("/chat")
-async def chat(
-    request: ChatRequest,
-    qdrant_client: QdrantClient = Depends(get_qdrant_client),
-    redis_client: Redis = Depends(get_redis_client),
-) -> ChatResponse:
-    """Main chat endpoint. property_id is OPTIONAL."""
+async def chat(request: ChatRequest) -> ChatResponse:
+    """Main chat endpoint. property_id is OPTIONAL.
+
+    Uses ainvoke() so the entire LangGraph pipeline runs
+    asynchronously — Redis, Qdrant, and LLM calls do not
+    block the event loop.
+    """
     start = time.perf_counter()
+
+    qdrant_client: AsyncQdrantClient = get_qdrant_client()
+    redis_client: Redis = get_redis_client()
 
     agent = create_agent(qdrant_client=qdrant_client, redis_client=redis_client)
 
@@ -34,8 +38,8 @@ async def chat(
         "session_id": request.session_id or "",
     }
 
-    # Run the graph
-    result = agent.invoke(initial_state)
+    # Run the graph asynchronously
+    result = await agent.ainvoke(initial_state)
 
     duration_ms = round((time.perf_counter() - start) * 1000, 2)
 
