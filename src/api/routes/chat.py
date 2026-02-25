@@ -3,9 +3,7 @@ from __future__ import annotations
 import time
 
 import structlog
-from fastapi import APIRouter
-from qdrant_client import AsyncQdrantClient
-from redis.asyncio import Redis
+from fastapi import APIRouter, Request
 
 from src.agent.graph import create_agent
 from src.api.dependencies import get_qdrant_client, get_redis_client
@@ -17,7 +15,7 @@ router = APIRouter()
 
 
 @router.post("/chat")
-async def chat(request: ChatRequest) -> ChatResponse:
+async def chat(request: Request, body: ChatRequest) -> ChatResponse:
     """Main chat endpoint. property_id is OPTIONAL.
 
     Uses ainvoke() so the entire LangGraph pipeline runs
@@ -26,16 +24,16 @@ async def chat(request: ChatRequest) -> ChatResponse:
     """
     start = time.perf_counter()
 
-    qdrant_client: AsyncQdrantClient = get_qdrant_client()
-    redis_client: Redis = get_redis_client()
+    qdrant_client = get_qdrant_client(request.app)
+    redis_client = get_redis_client(request.app)
 
     agent = create_agent(qdrant_client=qdrant_client, redis_client=redis_client)
 
     # Build initial state
     initial_state: AgentState = {
-        "message": request.message,
-        "property_id": request.property_id,
-        "session_id": request.session_id or "",
+        "message": body.message,
+        "property_id": body.property_id,
+        "session_id": body.session_id or "",
     }
 
     # Run the graph asynchronously
@@ -45,7 +43,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     # Determine property_id for response
     response_pid = result.get("active_property") or (
-        str(request.property_id) if request.property_id else None
+        str(body.property_id) if body.property_id else None
     )
 
     scope = result.get("scope")
