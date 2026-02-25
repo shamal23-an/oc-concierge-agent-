@@ -50,6 +50,8 @@ async def chat(
     except ValueError:
         scope_enum = None
 
+    cached = result.get("cache_hit", False)
+
     logger.info(
         "chat_response",
         session_id=result.get("session_id"),
@@ -57,6 +59,7 @@ async def chat(
         property_id=response_pid,
         num_sources=len(result.get("sources", [])),
         duration_ms=duration_ms,
+        cached=cached,
     )
 
     return ChatResponse(
@@ -65,5 +68,5 @@ async def chat(
         property_id=response_pid,
         scope=scope_enum,
         sources=result.get("sources", []),
-        cached=False,
+        cached=cached,
     )

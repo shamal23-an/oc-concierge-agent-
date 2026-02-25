@@ -40,3 +40,4 @@ redis_data/
 
 # claude
 CLAUDE.md
+.claude/
