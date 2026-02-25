@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 from src.cache.response_cache import (
     _build_cache_key,
@@ -11,7 +11,7 @@ from src.cache.response_cache import (
     set_cached_retrieval,
 )
 
-# ── Key generation ────────────────────────────────────────────────────────── #
+# ── Key generation (sync — no change needed) ─────────────────────────────── #
 
 
 class TestBuildCacheKey:
@@ -51,26 +51,26 @@ class TestBuildCacheKey:
         assert isinstance(key, str) and len(key) == 64  # SHA-256 hex
 
 
-# ── Response cache ────────────────────────────────────────────────────────── #
+# ── Response cache (async) ────────────────────────────────────────────────── #
 
 
 class TestResponseCache:
-    def test_miss_returns_none(self):
-        redis = MagicMock()
+    async def test_miss_returns_none(self):
+        redis = AsyncMock()
         redis.get.return_value = None
-        result = get_cached_response(redis, "hello", None, "group")
+        result = await get_cached_response(redis, "hello", None, "group")
         assert result is None
 
-    def test_hit_returns_dict(self):
+    async def test_hit_returns_dict(self):
         payload = {"response": "Welcome!", "sources": ["menu.pdf"]}
-        redis = MagicMock()
+        redis = AsyncMock()
         redis.get.return_value = json.dumps(payload)
-        result = get_cached_response(redis, "hello", None, "group")
+        result = await get_cached_response(redis, "hello", None, "group")
         assert result == payload
 
-    def test_set_calls_setex(self):
-        redis = MagicMock()
-        set_cached_response(
+    async def test_set_calls_setex(self):
+        redis = AsyncMock()
+        await set_cached_response(
             redis, "hello", None, "group",
             response="Welcome!", sources=["menu.pdf"],
         )
@@ -81,35 +81,34 @@ class TestResponseCache:
         assert stored["response"] == "Welcome!"
         assert stored["sources"] == ["menu.pdf"]
 
-    def test_redis_error_returns_none(self):
+    async def test_redis_error_returns_none(self):
         """Cache read errors degrade gracefully to a miss."""
-        redis = MagicMock()
+        redis = AsyncMock()
         redis.get.side_effect = ConnectionError("Redis down")
-        result = get_cached_response(redis, "hello", None, "group")
+        result = await get_cached_response(redis, "hello", None, "group")
         assert result is None
 
-    def test_redis_write_error_does_not_raise(self):
+    async def test_redis_write_error_does_not_raise(self):
         """Cache write errors are swallowed (don't break the request)."""
-        redis = MagicMock()
+        redis = AsyncMock()
         redis.setex.side_effect = ConnectionError("Redis down")
-        # Should not raise
-        set_cached_response(
+        await set_cached_response(
             redis, "hello", None, "group",
             response="Welcome!", sources=[],
         )
 
 
-# ── Retrieval cache ──────────────────────────────────────────────────────── #
+# ── Retrieval cache (async) ──────────────────────────────────────────────── #
 
 
 class TestRetrievalCache:
-    def test_miss_returns_none(self):
-        redis = MagicMock()
+    async def test_miss_returns_none(self):
+        redis = AsyncMock()
         redis.get.return_value = None
-        result = get_cached_retrieval(redis, "hello", None, "group")
+        result = await get_cached_retrieval(redis, "hello", None, "group")
         assert result is None
 
-    def test_hit_returns_chunks(self):
+    async def test_hit_returns_chunks(self):
         chunks = [
             {
                 "content": "Dinner is at 7pm",
@@ -119,13 +118,13 @@ class TestRetrievalCache:
                 "metadata": {},
             },
         ]
-        redis = MagicMock()
+        redis = AsyncMock()
         redis.get.return_value = json.dumps(chunks)
-        result = get_cached_retrieval(redis, "hello", None, "group")
+        result = await get_cached_retrieval(redis, "hello", None, "group")
         assert result == chunks
 
-    def test_set_calls_setex(self):
-        redis = MagicMock()
+    async def test_set_calls_setex(self):
+        redis = AsyncMock()
         chunks = [
             {
                 "content": "Dinner is at 7pm",
@@ -135,7 +134,7 @@ class TestRetrievalCache:
                 "metadata": {},
             },
         ]
-        set_cached_retrieval(
+        await set_cached_retrieval(
             redis, "hello", None, "group", chunks=chunks,
         )
         redis.setex.assert_called_once()

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import structlog
 from langchain_openai import ChatOpenAI
-from qdrant_client import QdrantClient
-from redis import Redis
+from qdrant_client import AsyncQdrantClient
+from redis.asyncio import Redis
 
 from src.agent.context_resolver import resolve_context
 from src.agent.prompts import (
@@ -58,7 +58,13 @@ def _is_out_of_scope(message: str) -> bool:
     return any(p in lower for p in OUT_OF_SCOPE_PATTERNS)
 
 
-def resolve_node(
+def _has_conversation_history(state: AgentState) -> bool:
+    """Check if the session has prior conversation turns."""
+    history = state.get("conversation_history", [])
+    return len(history) > 0
+
+
+async def resolve_node(
     state: AgentState,
     *,
     redis_client: Redis,
@@ -68,8 +74,8 @@ def resolve_node(
     session_id = state.get("session_id", "")
     request_pid = state.get("property_id")
 
-    # Load session
-    session = load_session(redis_client, session_id or None)
+    # Load session (async Redis call)
+    session = await load_session(redis_client, session_id or None)
     state["session_id"] = session.session_id
 
     # Fast-path: greeting
@@ -79,7 +85,7 @@ def resolve_node(
         state["sources"] = []
         session.add_message("user", message)
         session.add_message("assistant", state["response"])
-        save_session(redis_client, session)
+        await save_session(redis_client, session)
         return state
 
     # Fast-path: out of scope
@@ -89,10 +95,10 @@ def resolve_node(
         state["sources"] = []
         session.add_message("user", message)
         session.add_message("assistant", state["response"])
-        save_session(redis_client, session)
+        await save_session(redis_client, session)
         return state
 
-    # Resolve context
+    # Resolve context (pure Python — no I/O, stays sync)
     pid = PropertyID(request_pid) if request_pid else None
     ctx = resolve_context(message, request_property_id=pid, session=session)
 
@@ -109,21 +115,15 @@ def resolve_node(
     return state
 
 
-def _has_conversation_history(state: AgentState) -> bool:
-    """Check if the session has prior conversation turns."""
-    history = state.get("conversation_history", [])
-    return len(history) > 0
-
-
-def retrieve_node(
+async def retrieve_node(
     state: AgentState,
     *,
-    qdrant_client: QdrantClient,
+    qdrant_client: AsyncQdrantClient,
     redis_client: Redis,
 ) -> AgentState:
     """Node 2: Retrieve relevant chunks from Qdrant.
 
-    Checks the retrieval cache first (Redis). Only caches queries
+    Checks the retrieval cache first (async Redis). Only caches queries
     without conversation history — follow-up questions depend on
     context and aren't safe to cache.
     """
@@ -136,17 +136,17 @@ def retrieve_node(
     active_pid = state.get("active_property")
     can_cache = not _has_conversation_history(state)
 
-    # ── Cache check ──────────────────────────────────────────────────── #
+    # ── Cache check (async) ──────────────────────────────────────────── #
     if can_cache:
-        cached = get_cached_retrieval(redis_client, message, active_pid, scope)
+        cached = await get_cached_retrieval(redis_client, message, active_pid, scope)
         if cached is not None:
             logger.info("retrieval_cache_hit", message=message[:60])
             state["chunks"] = cached
             state["cache_hit"] = True
             return state
 
-    # ── Normal retrieval ─────────────────────────────────────────────── #
-    vector = list(embed_query(message))
+    # ── Normal retrieval (async) ─────────────────────────────────────── #
+    vector = list(await embed_query(message))
 
     property_id = None
     property_ids = None
@@ -169,7 +169,7 @@ def retrieve_node(
         except ValueError:
             pass
 
-    chunks = layered_retrieve(
+    chunks = await layered_retrieve(
         qdrant_client,
         vector,
         scope=scope,
@@ -183,20 +183,20 @@ def retrieve_node(
 
     state["chunks"] = ranked
 
-    # ── Cache store ──────────────────────────────────────────────────── #
+    # ── Cache store (async) ──────────────────────────────────────────── #
     if can_cache:
-        set_cached_retrieval(
+        await set_cached_retrieval(
             redis_client, message, active_pid, scope, chunks=ranked,
         )
 
     return state
 
 
-def generate_node(state: AgentState) -> AgentState:
-    """Node 3: Generate response using LLM (single call).
+async def generate_node(state: AgentState) -> AgentState:
+    """Node 3: Generate response using LLM (single async call).
 
-    Checks the response cache first (Redis). On miss, calls the LLM
-    and stores the result. Only caches when there is no prior
+    Checks the response cache first (async Redis). On miss, calls the
+    LLM and stores the result. Only caches when there is no prior
     conversation history.
     """
     # Skip if already answered
@@ -208,9 +208,9 @@ def generate_node(state: AgentState) -> AgentState:
     scope = state.get("scope", "group")
     can_cache = not _has_conversation_history(state)
 
-    # ── Response cache check ─────────────────────────────────────────── #
+    # ── Response cache check (async) ─────────────────────────────────── #
     if can_cache:
-        cached = get_cached_response(
+        cached = await get_cached_response(
             state.get("_redis"),  # type: ignore[arg-type]
             message,
             active_pid,
@@ -221,11 +221,10 @@ def generate_node(state: AgentState) -> AgentState:
             state["response"] = cached["response"]
             state["sources"] = cached["sources"]
             state["cache_hit"] = True
-            # Still save session so conversation history is preserved
-            _save_session(state)
+            await _save_session(state)
             return state
 
-    # ── Normal LLM generation ────────────────────────────────────────── #
+    # ── Normal LLM generation (async) ────────────────────────────────── #
     settings = get_settings()
     llm = ChatOpenAI(
         model=settings.llm_model,
@@ -273,7 +272,8 @@ def generate_node(state: AgentState) -> AgentState:
         history=history_str,
     )
 
-    response = llm.invoke([
+    # ainvoke = async LLM call (non-blocking)
+    response = await llm.ainvoke([
         {"role": "system", "content": system_message},
         {"role": "user", "content": state["message"]},
     ])
@@ -283,10 +283,10 @@ def generate_node(state: AgentState) -> AgentState:
     sources = list({c["source_file"] for c in chunks if c.get("source_file")})
     state["sources"] = sources
 
-    # ── Response cache store ─────────────────────────────────────────── #
+    # ── Response cache store (async) ─────────────────────────────────── #
     redis_client = state.get("_redis")  # type: ignore[typeddict-item]
     if can_cache and redis_client:
-        set_cached_response(
+        await set_cached_response(
             redis_client,
             message,
             active_pid,
@@ -295,11 +295,11 @@ def generate_node(state: AgentState) -> AgentState:
             sources=sources,
         )
 
-    _save_session(state)
+    await _save_session(state)
     return state
 
 
-def _save_session(state: AgentState) -> None:
+async def _save_session(state: AgentState) -> None:
     """Save session to Redis (extracted to avoid duplication)."""
     session = state.get("_session")  # type: ignore[typeddict-item]
     redis_client = state.get("_redis")  # type: ignore[typeddict-item]
@@ -307,4 +307,4 @@ def _save_session(state: AgentState) -> None:
         session.active_property = state.get("active_property")
         session.add_message("user", state["message"])
         session.add_message("assistant", state["response"])
-        save_session(redis_client, session)
+        await save_session(redis_client, session)
