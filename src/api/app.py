@@ -18,10 +18,10 @@ logger = structlog.get_logger()
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     """Manage async client lifecycle: create on startup, close on shutdown."""
-    await init_clients()
+    await init_clients(application)
     logger.info("application_started")
     yield
-    await close_clients()
+    await close_clients(application)
     logger.info("application_stopped")
 
 
