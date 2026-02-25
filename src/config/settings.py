@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     whatsapp_verify_token: str = ""
     whatsapp_app_secret: str = ""
 
+    # Timeouts (seconds)
+    openai_timeout: int = 30  # LLM generation
+    embedding_timeout: int = 15  # Embedding API
+    qdrant_timeout: int = 10  # Vector search
+    redis_timeout: int = 5  # Cache/session ops
+
     # API
     api_host: str = "0.0.0.0"
     api_port: int = 8000

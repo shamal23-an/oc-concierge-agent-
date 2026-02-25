@@ -1,8 +1,18 @@
 from __future__ import annotations
 
+import logging
+
+import httpx
 import structlog
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from src.config.constants import (
     MIN_CHUNKS_FOR_CONFIDENCE,
@@ -16,7 +26,17 @@ from src.domain.schemas import QueryScope, RetrievedChunk
 
 logger = structlog.get_logger()
 
+# Qdrant uses httpx under the hood — retry on transient network errors only.
+_TRANSIENT_QDRANT_ERRORS = (httpx.TimeoutException, httpx.ConnectError)
 
+
+@retry(
+    retry=retry_if_exception_type(_TRANSIENT_QDRANT_ERRORS),
+    stop=stop_after_attempt(2),
+    wait=wait_exponential(multiplier=1, min=1, max=4),
+    before_sleep=before_sleep_log(logging.getLogger("tenacity.qdrant"), logging.WARNING),
+    reraise=True,
+)
 async def _search_qdrant(
     client: AsyncQdrantClient,
     vector: list[float],
@@ -25,7 +45,7 @@ async def _search_qdrant(
     limit: int = 5,
     score_threshold: float = 0.3,
 ) -> list[RetrievedChunk]:
-    """Raw Qdrant search returning typed chunks."""
+    """Raw Qdrant search with retry on transient errors."""
     settings = get_settings()
     results = await client.search(
         collection_name=settings.qdrant_collection,

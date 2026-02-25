@@ -20,10 +20,15 @@ async def init_clients(app: FastAPI) -> None:
     settings = get_settings()
 
     app.state.qdrant_client = AsyncQdrantClient(
-        host=settings.qdrant_host, port=settings.qdrant_port,
+        host=settings.qdrant_host,
+        port=settings.qdrant_port,
+        timeout=settings.qdrant_timeout,
     )
     app.state.redis_client = Redis.from_url(
-        settings.redis_url, decode_responses=True,
+        settings.redis_url,
+        decode_responses=True,
+        socket_timeout=settings.redis_timeout,
+        socket_connect_timeout=settings.redis_timeout,
     )
 
     logger.info("clients_initialised", qdrant=settings.qdrant_host, redis=settings.redis_url)
