@@ -84,3 +84,6 @@ class AgentState(TypedDict, total=False):
     # Session
     conversation_history: list[dict]
     active_property: str | None
+
+    # Caching
+    cache_hit: bool

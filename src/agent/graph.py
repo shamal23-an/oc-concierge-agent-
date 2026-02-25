@@ -34,7 +34,9 @@ def build_graph(
 
     # Bind clients to node functions
     resolve_fn = partial(resolve_node, redis_client=redis_client)
-    retrieve_fn = partial(retrieve_node, qdrant_client=qdrant_client)
+    retrieve_fn = partial(
+        retrieve_node, qdrant_client=qdrant_client, redis_client=redis_client,
+    )
 
     graph.add_node("resolve", resolve_fn)
     graph.add_node("retrieve", retrieve_fn)

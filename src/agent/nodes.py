@@ -13,6 +13,12 @@ from src.agent.prompts import (
     format_history,
 )
 from src.agent.session import load_session, save_session
+from src.cache.response_cache import (
+    get_cached_response,
+    get_cached_retrieval,
+    set_cached_response,
+    set_cached_retrieval,
+)
 from src.config.constants import GREETING_PATTERNS, OUT_OF_SCOPE_PATTERNS
 from src.config.settings import get_settings
 from src.domain.properties import PROPERTY_REGISTRY, PropertyID
@@ -103,30 +109,52 @@ def resolve_node(
     return state
 
 
+def _has_conversation_history(state: AgentState) -> bool:
+    """Check if the session has prior conversation turns."""
+    history = state.get("conversation_history", [])
+    return len(history) > 0
+
+
 def retrieve_node(
     state: AgentState,
     *,
     qdrant_client: QdrantClient,
+    redis_client: Redis,
 ) -> AgentState:
-    """Node 2: Retrieve relevant chunks from Qdrant."""
+    """Node 2: Retrieve relevant chunks from Qdrant.
+
+    Checks the retrieval cache first (Redis). Only caches queries
+    without conversation history — follow-up questions depend on
+    context and aren't safe to cache.
+    """
     # Skip if already answered (greeting/out-of-scope)
     if state.get("response"):
         return state
 
     message = state["message"]
     scope = QueryScope(state["scope"])
+    active_pid = state.get("active_property")
+    can_cache = not _has_conversation_history(state)
 
-    # Embed query
+    # ── Cache check ──────────────────────────────────────────────────── #
+    if can_cache:
+        cached = get_cached_retrieval(redis_client, message, active_pid, scope)
+        if cached is not None:
+            logger.info("retrieval_cache_hit", message=message[:60])
+            state["chunks"] = cached
+            state["cache_hit"] = True
+            return state
+
+    # ── Normal retrieval ─────────────────────────────────────────────── #
     vector = list(embed_query(message))
 
-    # Determine retrieval params
     property_id = None
     property_ids = None
     region = None
 
-    if state.get("active_property"):
+    if active_pid:
         try:
-            property_id = PropertyID(state["active_property"])
+            property_id = PropertyID(active_pid)
         except ValueError:
             pass
 
@@ -141,7 +169,6 @@ def retrieve_node(
         except ValueError:
             pass
 
-    # Retrieve
     chunks = layered_retrieve(
         qdrant_client,
         vector,
@@ -151,20 +178,54 @@ def retrieve_node(
         region=region,
     )
 
-    # Rank
     target_pid = str(property_id) if property_id else None
     ranked = rank_chunks(chunks, target_property_id=target_pid)
 
     state["chunks"] = ranked
+
+    # ── Cache store ──────────────────────────────────────────────────── #
+    if can_cache:
+        set_cached_retrieval(
+            redis_client, message, active_pid, scope, chunks=ranked,
+        )
+
     return state
 
 
 def generate_node(state: AgentState) -> AgentState:
-    """Node 3: Generate response using LLM (single call)."""
+    """Node 3: Generate response using LLM (single call).
+
+    Checks the response cache first (Redis). On miss, calls the LLM
+    and stores the result. Only caches when there is no prior
+    conversation history.
+    """
     # Skip if already answered
     if state.get("response"):
         return state
 
+    message = state["message"]
+    active_pid = state.get("active_property")
+    scope = state.get("scope", "group")
+    can_cache = not _has_conversation_history(state)
+
+    # ── Response cache check ─────────────────────────────────────────── #
+    if can_cache:
+        cached = get_cached_response(
+            state.get("_redis"),  # type: ignore[arg-type]
+            message,
+            active_pid,
+            scope,
+        )
+        if cached is not None:
+            logger.info("response_cache_hit", message=message[:60])
+            state["response"] = cached["response"]
+            state["sources"] = cached["sources"]
+            state["cache_hit"] = True
+            # Still save session so conversation history is preserved
+            _save_session(state)
+            return state
+
+    # ── Normal LLM generation ────────────────────────────────────────── #
     settings = get_settings()
     llm = ChatOpenAI(
         model=settings.llm_model,
@@ -172,15 +233,13 @@ def generate_node(state: AgentState) -> AgentState:
         api_key=settings.openai_api_key,
     )
 
-    # Build scope instructions
-    scope = state.get("scope", "group")
     property_name = None
     location = None
     region_name = None
     property_names_str = None
 
-    if state.get("active_property"):
-        info = PROPERTY_REGISTRY.get(PropertyID(state["active_property"]))
+    if active_pid:
+        info = PROPERTY_REGISTRY.get(PropertyID(active_pid))
         if info:
             property_name = info.full_name
             location = info.location
@@ -204,7 +263,6 @@ def generate_node(state: AgentState) -> AgentState:
         property_names=property_names_str,
     )
 
-    # Format context and history
     chunks = state.get("chunks", [])
     context_str = format_context(chunks)
     history_str = format_history(state.get("conversation_history", []))
@@ -215,7 +273,6 @@ def generate_node(state: AgentState) -> AgentState:
         history=history_str,
     )
 
-    # Single LLM call
     response = llm.invoke([
         {"role": "system", "content": system_message},
         {"role": "user", "content": state["message"]},
@@ -223,11 +280,27 @@ def generate_node(state: AgentState) -> AgentState:
 
     state["response"] = response.content
 
-    # Extract sources from chunks
     sources = list({c["source_file"] for c in chunks if c.get("source_file")})
     state["sources"] = sources
 
-    # Save session
+    # ── Response cache store ─────────────────────────────────────────── #
+    redis_client = state.get("_redis")  # type: ignore[typeddict-item]
+    if can_cache and redis_client:
+        set_cached_response(
+            redis_client,
+            message,
+            active_pid,
+            scope,
+            response=state["response"],
+            sources=sources,
+        )
+
+    _save_session(state)
+    return state
+
+
+def _save_session(state: AgentState) -> None:
+    """Save session to Redis (extracted to avoid duplication)."""
     session = state.get("_session")  # type: ignore[typeddict-item]
     redis_client = state.get("_redis")  # type: ignore[typeddict-item]
     if session and redis_client:
@@ -235,5 +308,3 @@ def generate_node(state: AgentState) -> AgentState:
         session.add_message("user", state["message"])
         session.add_message("assistant", state["response"])
         save_session(redis_client, session)
-
-    return state

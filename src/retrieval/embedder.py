@@ -8,6 +8,7 @@ from src.config.constants import EMBEDDING_CACHE_MAX_SIZE
 from src.config.settings import get_settings
 
 
+@lru_cache(maxsize=1)
 def _get_openai_client() -> OpenAI:
     settings = get_settings()
     return OpenAI(api_key=settings.openai_api_key)
