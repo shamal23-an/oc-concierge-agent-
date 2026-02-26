@@ -1,9 +1,19 @@
 from __future__ import annotations
 
+import logging
+
 import structlog
 from langchain_openai import ChatOpenAI
+from openai import APIConnectionError, APITimeoutError, RateLimitError
 from qdrant_client import AsyncQdrantClient
 from redis.asyncio import Redis
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from src.agent.context_resolver import resolve_context
 from src.agent.prompts import (
@@ -26,6 +36,9 @@ from src.domain.schemas import AgentState, QueryScope
 from src.retrieval.embedder import embed_query
 from src.retrieval.ranker import rank_chunks
 from src.retrieval.strategies import layered_retrieve
+
+# Retry on transient OpenAI errors only (timeout, connection, rate limit).
+_TRANSIENT_LLM_ERRORS = (APITimeoutError, APIConnectionError, RateLimitError)
 
 logger = structlog.get_logger()
 
@@ -62,6 +75,19 @@ def _has_conversation_history(state: AgentState) -> bool:
     """Check if the session has prior conversation turns."""
     history = state.get("conversation_history", [])
     return len(history) > 0
+
+
+@retry(
+    retry=retry_if_exception_type(_TRANSIENT_LLM_ERRORS),
+    stop=stop_after_attempt(2),
+    wait=wait_exponential(multiplier=2, min=2, max=8),
+    before_sleep=before_sleep_log(logging.getLogger("tenacity.llm"), logging.WARNING),
+    reraise=True,
+)
+async def _invoke_llm(llm: ChatOpenAI, messages: list[dict]) -> str:
+    """Call the LLM with retry on transient errors."""
+    response = await llm.ainvoke(messages)
+    return response.content
 
 
 async def resolve_node(
@@ -230,6 +256,7 @@ async def generate_node(state: AgentState) -> AgentState:
         model=settings.llm_model,
         temperature=settings.llm_temperature,
         api_key=settings.openai_api_key,
+        request_timeout=settings.openai_timeout,
     )
 
     property_name = None
@@ -272,13 +299,11 @@ async def generate_node(state: AgentState) -> AgentState:
         history=history_str,
     )
 
-    # ainvoke = async LLM call (non-blocking)
-    response = await llm.ainvoke([
+    # LLM call with retry on transient errors
+    state["response"] = await _invoke_llm(llm, [
         {"role": "system", "content": system_message},
         {"role": "user", "content": state["message"]},
     ])
-
-    state["response"] = response.content
 
     sources = list({c["source_file"] for c in chunks if c.get("source_file")})
     state["sources"] = sources
