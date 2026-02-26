@@ -3,8 +3,9 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 import structlog
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from src.api.dependencies import close_clients, init_clients
 from src.api.middleware import RequestLoggingMiddleware
@@ -51,6 +52,26 @@ def create_app() -> FastAPI:
     application.include_router(health.router, tags=["health"])
     application.include_router(properties.router, tags=["properties"])
     application.include_router(chat.router, tags=["chat"])
+
+    # Global exception handler — safety net for any unhandled errors.
+    # Ensures the client always gets structured JSON, never a raw 500.
+    @application.exception_handler(Exception)
+    async def unhandled_exception_handler(
+        request: Request, exc: Exception,
+    ) -> JSONResponse:
+        logger.error(
+            "unhandled_exception",
+            path=request.url.path,
+            method=request.method,
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "An internal error occurred. Please try again later.",
+            },
+        )
 
     return application
 
