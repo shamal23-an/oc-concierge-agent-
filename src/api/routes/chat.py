@@ -4,8 +4,10 @@ import time
 
 import structlog
 from fastapi import APIRouter, Request
+from fastapi.responses import JSONResponse
 
 from src.agent.graph import create_agent
+from src.agent.session_lock import SessionLockError, session_lock
 from src.api.dependencies import get_qdrant_client, get_redis_client
 from src.domain.schemas import AgentState, ChatRequest, ChatResponse, QueryScope
 
@@ -29,15 +31,34 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
 
     agent = create_agent(qdrant_client=qdrant_client, redis_client=redis_client)
 
+    # Ensure we have a session_id before locking (generate if not provided)
+    session_id = body.session_id or ""
+
     # Build initial state
     initial_state: AgentState = {
         "message": body.message,
         "property_id": body.property_id,
-        "session_id": body.session_id or "",
+        "session_id": session_id,
     }
 
-    # Run the graph asynchronously
-    result = await agent.ainvoke(initial_state)
+    # Acquire per-session lock, then run the graph.
+    # This prevents concurrent requests for the same session from
+    # causing read-modify-write race conditions on session data.
+    try:
+        async with session_lock(redis_client, session_id):
+            result = await agent.ainvoke(initial_state)
+    except SessionLockError:
+        logger.warning(
+            "chat_session_locked",
+            session_id=session_id,
+        )
+        return JSONResponse(
+            status_code=429,
+            content={
+                "detail": "This session is currently processing another request. "
+                "Please try again shortly.",
+            },
+        )
 
     duration_ms = round((time.perf_counter() - start) * 1000, 2)
 

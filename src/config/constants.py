@@ -15,6 +15,9 @@ EMBEDDING_CACHE_MAX_SIZE = 1000
 
 # Session
 MAX_CONVERSATION_HISTORY = 20
+SESSION_LOCK_TTL = 10  # seconds — auto-expire stale locks
+SESSION_LOCK_WAIT_TIMEOUT = 5  # seconds — max wait for lock acquisition
+SESSION_LOCK_POLL_INTERVAL = 0.1  # seconds — polling interval while waiting
 
 # Ingestion
 BATCH_EMBEDDING_SIZE = 100
