@@ -59,6 +59,36 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
                 "Please try again shortly.",
             },
         )
+    except Exception:
+        # Safety net: if anything in the pipeline fails (LLM down,
+        # Qdrant unreachable, unexpected bug), return a friendly
+        # ChatResponse so the frontend can handle it normally.
+        logger.exception(
+            "chat_pipeline_error",
+            session_id=session_id,
+            message=body.message[:100],
+        )
+        duration_ms = round((time.perf_counter() - start) * 1000, 2)
+        logger.info(
+            "chat_response",
+            session_id=session_id,
+            scope=None,
+            property_id=None,
+            num_sources=0,
+            duration_ms=duration_ms,
+            cached=False,
+            error=True,
+        )
+        return ChatResponse(
+            response=(
+                "I'm sorry, I'm having trouble processing your request "
+                "right now. Please try again in a moment, or contact "
+                "our team directly for assistance."
+            ),
+            session_id=session_id,
+            property_id=str(body.property_id) if body.property_id else None,
+            sources=[],
+        )
 
     duration_ms = round((time.perf_counter() - start) * 1000, 2)
 
