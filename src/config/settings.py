@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4o-mini"
     llm_temperature: float = 0.1
     embedding_model: str = "text-embedding-3-large"
-    embedding_dimensions: int = 1536
+    embedding_dimensions: int = 3072
 
     # Qdrant
     qdrant_host: str = "localhost"
