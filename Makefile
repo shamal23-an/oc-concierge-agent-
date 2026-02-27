@@ -1,4 +1,4 @@
-.PHONY: install install-dev lint format test test-cov run-api run-ui ingest docker-up docker-down health
+.PHONY: install install-dev lint format test test-cov run-api run-ui ingest docker-up docker-down docker-build health
 
 install:
 	uv sync
@@ -26,6 +26,9 @@ run-ui:
 
 ingest:
 	uv run python scripts/ingest.py
+
+docker-build:
+	docker compose build
 
 docker-up:
 	docker compose up -d

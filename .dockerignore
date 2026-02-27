@@ -1,0 +1,17 @@
+.venv/
+.git/
+.github/
+tests/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.*
+.claude/
+.pytest_cache/
+.ruff_cache/
+.streamlit/
+*.md
+.gitignore
+.dockerignore
+Makefile
