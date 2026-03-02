@@ -7,12 +7,20 @@ Talks to the FastAPI /chat endpoint. Run with:
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 import requests
 import streamlit as st
+from dotenv import load_dotenv
+
+# Load .env from project root (same file FastAPI uses)
+_env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+load_dotenv(_env_path)
 
 # ── Configuration ─────────────────────────────────────────────────────────── #
 
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 BRAND_GOLD = "#9E8962"
 
