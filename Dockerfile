@@ -17,12 +17,11 @@ COPY src/ src/
 COPY scripts/ scripts/
 
 # Non-root user for security
-RUN addgroup --system app && adduser --system --ingroup app app
+ENV UV_CACHE_DIR=/tmp/.uv-cache
+RUN addgroup --system app && \
+    adduser --system --ingroup app --home /home/app app
 USER app
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=15s --timeout=5s --start-period=15s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
-
-CMD ["uv", "run", "uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uv run uvicorn src.api.app:app --host 0.0.0.0 --port ${PORT:-8000}"]
