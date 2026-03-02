@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     # Qdrant
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
+    qdrant_url: str = ""  # Cloud URL (e.g. https://xxx.cloud.qdrant.io)
+    qdrant_api_key: str = ""  # Cloud API key
     qdrant_collection: str = "oyster_collection"
 
     # Redis

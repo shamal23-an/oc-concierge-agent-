@@ -19,11 +19,18 @@ async def init_clients(app: FastAPI) -> None:
     """Create async clients and store them on app.state."""
     settings = get_settings()
 
-    app.state.qdrant_client = AsyncQdrantClient(
-        host=settings.qdrant_host,
-        port=settings.qdrant_port,
-        timeout=settings.qdrant_timeout,
-    )
+    if settings.qdrant_url:
+        app.state.qdrant_client = AsyncQdrantClient(
+            url=settings.qdrant_url,
+            api_key=settings.qdrant_api_key or None,
+            timeout=settings.qdrant_timeout,
+        )
+    else:
+        app.state.qdrant_client = AsyncQdrantClient(
+            host=settings.qdrant_host,
+            port=settings.qdrant_port,
+            timeout=settings.qdrant_timeout,
+        )
     app.state.redis_client = Redis.from_url(
         settings.redis_url,
         decode_responses=True,
@@ -31,7 +38,8 @@ async def init_clients(app: FastAPI) -> None:
         socket_connect_timeout=settings.redis_timeout,
     )
 
-    logger.info("clients_initialised", qdrant=settings.qdrant_host, redis=settings.redis_url)
+    qdrant_target = settings.qdrant_url or f"{settings.qdrant_host}:{settings.qdrant_port}"
+    logger.info("clients_initialised", qdrant=qdrant_target, redis=settings.redis_url)
 
 
 async def close_clients(app: FastAPI) -> None:

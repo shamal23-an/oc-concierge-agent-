@@ -78,7 +78,13 @@ def run_ingestion(
     }
 
     if not dry_run:
-        client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+        if settings.qdrant_url:
+            client = QdrantClient(
+                url=settings.qdrant_url,
+                api_key=settings.qdrant_api_key or None,
+            )
+        else:
+            client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
         ensure_collection(client, recreate=recreate)
 
     dedup = DeduplicationTracker()
