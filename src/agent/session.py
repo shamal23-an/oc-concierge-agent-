@@ -30,9 +30,7 @@ class SessionData:
         """Add a message and trim to max history."""
         self.conversation_history.append({"role": role, "content": content})
         if len(self.conversation_history) > MAX_CONVERSATION_HISTORY:
-            self.conversation_history = self.conversation_history[
-                -MAX_CONVERSATION_HISTORY:
-            ]
+            self.conversation_history = self.conversation_history[-MAX_CONVERSATION_HISTORY:]
 
     def to_dict(self) -> dict:
         return {

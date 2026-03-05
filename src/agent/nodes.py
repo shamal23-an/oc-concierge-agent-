@@ -61,7 +61,10 @@ def _is_greeting(message: str) -> bool:
     """Fast-path greeting detection (no LLM needed)."""
     cleaned = message.lower().strip().rstrip("!?.,:;")
     return cleaned in GREETING_PATTERNS or cleaned in {
-        "hi there", "hello there", "hey there", "good day",
+        "hi there",
+        "hello there",
+        "hey there",
+        "good day",
     }
 
 
@@ -212,7 +215,11 @@ async def retrieve_node(
     # ── Cache store (async) ──────────────────────────────────────────── #
     if can_cache:
         await set_cached_retrieval(
-            redis_client, message, active_pid, scope, chunks=ranked,
+            redis_client,
+            message,
+            active_pid,
+            scope,
+            chunks=ranked,
         )
 
     return state
@@ -300,10 +307,13 @@ async def generate_node(state: AgentState) -> AgentState:
     )
 
     # LLM call with retry on transient errors
-    state["response"] = await _invoke_llm(llm, [
-        {"role": "system", "content": system_message},
-        {"role": "user", "content": state["message"]},
-    ])
+    state["response"] = await _invoke_llm(
+        llm,
+        [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": state["message"]},
+        ],
+    )
 
     sources = list({c["source_file"] for c in chunks if c.get("source_file")})
     state["sources"] = sources

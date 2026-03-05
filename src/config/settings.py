@@ -47,12 +47,14 @@ class Settings(BaseSettings):
     @property
     def whatsapp_enabled(self) -> bool:
         """True when all required WhatsApp credentials are configured."""
-        return all([
-            self.whatsapp_token,
-            self.whatsapp_phone_id,
-            self.whatsapp_verify_token,
-            self.whatsapp_app_secret,
-        ])
+        return all(
+            [
+                self.whatsapp_token,
+                self.whatsapp_phone_id,
+                self.whatsapp_verify_token,
+                self.whatsapp_app_secret,
+            ]
+        )
 
     # Timeouts (seconds)
     openai_timeout: int = 30  # LLM generation

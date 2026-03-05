@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WhatsApp Business API Setup Guide — The Oyster Collection</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; line-height: 1.7; }
+  h1 { color: #9E8962; border-bottom: 3px solid #9E8962; padding-bottom: 10px; }
+  h2 { color: #6B5B3E; margin-top: 40px; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+  h3 { color: #9E8962; }
+  .meta { color: #888; font-size: 0.9em; margin-bottom: 30px; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+  th { background: #F5F2ED; color: #6B5B3E; }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li::before { content: "\2610  "; font-size: 1.1em; }
+  .important { background: #FFF8E1; border-left: 4px solid #9E8962; padding: 12px 16px; margin: 16px 0; }
+  .note { background: #F5F2ED; border-left: 4px solid #6B5B3E; padding: 12px 16px; margin: 16px 0; }
+  .scope-note { background: #FFF3E0; border-left: 4px solid #E65100; padding: 12px 16px; margin: 16px 0; }
+  code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+  .step-num { display: inline-block; background: #9E8962; color: white; width: 32px; height: 32px; text-align: center; line-height: 32px; border-radius: 50%; font-weight: bold; margin-right: 8px; }
+  .faq dt { font-weight: bold; margin-top: 16px; }
+  .faq dd { margin-left: 0; margin-bottom: 12px; }
+  a { color: #9E8962; }
+  .ref-list { background: #F5F2ED; padding: 16px 20px; border-radius: 8px; margin-top: 16px; }
+  .ref-list li { margin-bottom: 8px; }
+
+  /* Print / PDF page breaks */
+  @media print {
+    body { margin: 20px; }
+    .page-break { page-break-before: always; }
+    h2 { page-break-after: avoid; }
+    .important, .note, .scope-note { page-break-inside: avoid; }
+    table { page-break-inside: avoid; }
+    .ref-list { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>WhatsApp Business API Setup Guide</h1>
+<div class="meta">
+  <strong>For:</strong> <a href="https://www.oystercollection.co.za/">The Oyster Collection</a><br>
+  <strong>Prepared by:</strong> AdeptNova<br>
+  <strong>Date:</strong> 3 March 2026
+</div>
+
+<h2>Overview</h2>
+<p>This guide walks through the steps required to connect The Oyster Collection's WhatsApp number to the AI Concierge system via the <strong>Meta WhatsApp Cloud API</strong>. Once complete, guests will be able to message the business WhatsApp number and receive instant, intelligent responses about properties, restaurants, activities, rates, and more.</p>
+<p><strong>Estimated time:</strong> 1-2 hours of setup + 2-5 business days for Meta business verification</p>
+
+<h2>What You'll Need</h2>
+<p>Before starting, please have the following ready:</p>
+<ul class="checklist">
+  <li>Access to a computer (not mobile) with a web browser</li>
+  <li>The WhatsApp phone number: <strong>066 190 xxxx</strong></li>
+  <li>A Facebook account that can be used for business purposes</li>
+  <li>One of these business verification documents:
+    <ul>
+      <li>Business registration certificate / CIPC document</li>
+      <li>Utility bill showing the registered business name and address</li>
+      <li>Bank statement showing the registered business name</li>
+    </ul>
+  </li>
+  <li>The Oyster Collection website URL: <a href="https://www.oystercollection.co.za/">www.oystercollection.co.za</a></li>
+</ul>
+
+<h2><span class="step-num">1</span> Create or Access Meta Business Manager</h2>
+<p>Meta Business Manager is the central hub where your WhatsApp API access is managed.</p>
+<ol>
+  <li>Go to <strong><a href="https://business.facebook.com">https://business.facebook.com</a></strong></li>
+  <li>If you already have an account — log in and proceed to Step 2</li>
+  <li>If you don't have one:
+    <ul>
+      <li>Click <strong>"Create Account"</strong></li>
+      <li>Enter business name: <strong>The Oyster Collection</strong></li>
+      <li>Enter your name and business email</li>
+      <li>Fill in business details (address, website, phone)</li>
+      <li>Click <strong>"Submit"</strong></li>
+    </ul>
+  </li>
+</ol>
+<div class="important"><strong>Important:</strong> Use a real business email (e.g., info@oystercollection.co.za), not a personal email. This email will receive verification and notification emails from Meta.</div>
+
+<h2><span class="step-num">2</span> Verify Your Business</h2>
+<p>Meta requires business verification before granting full WhatsApp API access. This is a one-time process and is <strong>the most important step</strong> — without it, you cannot send messages via the API.</p>
+<ol>
+  <li>In Business Manager, go to <strong>Settings</strong> (gear icon, bottom left)</li>
+  <li>Navigate to <strong>Security Centre</strong></li>
+  <li>Click <strong>"Start Verification"</strong></li>
+  <li>Choose your country: <strong>South Africa</strong></li>
+  <li>Enter your official business details:
+    <ul>
+      <li>Legal business name (must match exactly as per CIPC registration)</li>
+      <li>Registered address</li>
+      <li>Business phone number</li>
+      <li>Website: <strong>www.oystercollection.co.za</strong></li>
+    </ul>
+  </li>
+  <li>Upload one verification document:
+    <ul>
+      <li><strong>Option A:</strong> CIPC registration certificate</li>
+      <li><strong>Option B:</strong> Recent utility bill with business name and address</li>
+      <li><strong>Option C:</strong> Bank statement with business name and address</li>
+    </ul>
+  </li>
+  <li>Click <strong>"Submit"</strong></li>
+</ol>
+<p><strong>Timeline:</strong> Meta typically reviews within 2-5 business days. You'll receive an email notification when approved.</p>
+<div class="note"><strong>If verification is rejected:</strong> The most common reason is a mismatch between the business name on the document and the name you entered. Ensure they match exactly (including "Pty Ltd" or similar). Resubmit with a different document if needed.</div>
+
+<h2 class="page-break"><span class="step-num">3</span> Create a Meta Developer App</h2>
+<p>In addition to Business Manager, you need a Meta Developer App — this is where WhatsApp Cloud API is enabled.</p>
+<ol>
+  <li>Go to <strong><a href="https://developers.facebook.com">https://developers.facebook.com</a></strong></li>
+  <li>Log in with the same Facebook account used for Business Manager</li>
+  <li>Click <strong>"My Apps"</strong> &gt; <strong>"Create App"</strong></li>
+  <li>Select app type: <strong>"Business"</strong></li>
+  <li>App name: <strong>"Oyster Collection WhatsApp"</strong> (or similar)</li>
+  <li>Connect it to your Meta Business Manager account</li>
+  <li>Once created, find <strong>"WhatsApp"</strong> in the product list and click <strong>"Set Up"</strong></li>
+  <li>Accept the WhatsApp Cloud API terms and conditions</li>
+</ol>
+<div class="note"><strong>Note:</strong> This step creates the "App" container that holds your WhatsApp API configuration, webhook settings, and credentials.</div>
+
+<h2><span class="step-num">4</span> Create a WhatsApp Business Account (WABA)</h2>
+<p>During the WhatsApp product setup (Step 3), you'll be prompted to create a WABA or link an existing one:</p>
+<ol>
+  <li>In the WhatsApp setup flow, click <strong>"Create a WhatsApp Business Account"</strong></li>
+  <li>Business name: <strong>The Oyster Collection</strong></li>
+  <li>This WABA will hold your phone number(s) and messaging configuration</li>
+</ol>
+
+<h2 class="page-break"><span class="step-num">5</span> Register the Phone Number</h2>
+<div class="important"><strong>Before this step:</strong> The phone number (066 190 xxxx) must NOT be currently registered on the regular WhatsApp or WhatsApp Business app. If it is, it must be deregistered first.</div>
+
+<p><strong>If the number is currently on WhatsApp:</strong></p>
+<ol>
+  <li>Back up any important conversations on the phone</li>
+  <li>Open WhatsApp on the phone with that number</li>
+  <li>Go to <strong>Settings &gt; Account &gt; Delete Account</strong></li>
+  <li>Wait at least 5 minutes before proceeding</li>
+</ol>
+
+<p><strong>To register the number on WhatsApp Cloud API:</strong></p>
+<ol>
+  <li>In your Meta Developer App, navigate to <strong>WhatsApp &gt; API Setup</strong></li>
+  <li>Scroll down to <strong>"Add Phone Number"</strong></li>
+  <li>Enter your business display name: <strong>The Oyster Collection</strong></li>
+  <li>Enter: <strong>+27 66 190 xxxx</strong> (South Africa country code +27)</li>
+  <li>Choose verification method: <strong>SMS</strong> or <strong>Voice Call</strong></li>
+  <li>Enter the OTP verification code received on the phone</li>
+  <li>Set a <strong>Two-Step Verification PIN</strong> (6-digit PIN — save this securely, it's required for future re-registrations)</li>
+</ol>
+<div class="note"><strong>Note:</strong> Meta reviews display names for policy compliance. Use your actual business name. Promotional text, all-caps, or misleading names will be rejected.</div>
+
+<h2><span class="step-num">6</span> Create a System User and Generate Permanent Token</h2>
+<p>This step generates the API credentials the AI Concierge system needs. We can do this together on a call, or you can grant AdeptNova admin access to complete it.</p>
+
+<div class="important"><strong>Important:</strong> Meta provides a temporary test token during setup, but it expires in 24 hours. You must create a System User with a permanent token for production use.</div>
+
+<ol>
+  <li>In Business Manager, go to <strong>Settings &gt; Users &gt; System Users</strong></li>
+  <li>Click <strong>"Add"</strong> to create a new system user</li>
+  <li>Name: <strong>concierge-api</strong></li>
+  <li>Role: <strong>Admin</strong></li>
+  <li>Click <strong>"Add Assets"</strong>:
+    <ul>
+      <li>Select <strong>Apps</strong> &gt; your WhatsApp app</li>
+      <li>Grant <strong>Full Control</strong></li>
+      <li>Select <strong>WhatsApp Accounts</strong> &gt; your WABA</li>
+      <li>Grant <strong>Full Control</strong></li>
+    </ul>
+  </li>
+  <li>Click <strong>"Generate New Token"</strong></li>
+  <li>Select the app you created in Step 3</li>
+  <li>Enable the following permissions:
+    <ul>
+      <li><code>whatsapp_business_management</code></li>
+      <li><code>whatsapp_business_messaging</code></li>
+    </ul>
+  </li>
+  <li>Click <strong>"Generate Token"</strong></li>
+  <li><strong>Copy the token immediately</strong> — it will not be shown again</li>
+</ol>
+<div class="important"><strong>Security:</strong> This token is equivalent to a password. Do not share it via email. We will provide a secure method for credential exchange (e.g., a one-time-view link or encrypted channel).</div>
+
+<h2 class="page-break"><span class="step-num">7</span> Enable Payment Method (Required for Production)</h2>
+<p>Meta requires a valid payment method on file before allowing production message sending:</p>
+<ol>
+  <li>In Business Manager, go to <strong>Settings &gt; Payments</strong> (or <strong>Billing</strong>)</li>
+  <li>Add a credit card or payment method</li>
+  <li>This covers any messaging costs beyond the free tier (first 1,000 service conversations/month are free)</li>
+</ol>
+
+<h2><span class="step-num">8</span> Share Credentials With AdeptNova</h2>
+<p>Once Steps 1-7 are complete, please share the following securely:</p>
+<table>
+  <tr><th>Item</th><th>Where to Find It</th><th>Status</th></tr>
+  <tr><td>WhatsApp Phone Number</td><td>+27 66 190 xxxx</td><td>Received</td></tr>
+  <tr><td>Phone Number ID</td><td>Meta Developer App &gt; WhatsApp &gt; API Setup &gt; shown below phone number</td><td>Needed</td></tr>
+  <tr><td>System User Access Token</td><td>Generated in Step 6 (starts with "EAA...")</td><td>Needed</td></tr>
+  <tr><td>WhatsApp Business Account ID</td><td>Business Manager &gt; WhatsApp Accounts &gt; Account ID in settings</td><td>Needed</td></tr>
+  <tr><td>App Secret</td><td>developers.facebook.com &gt; Your App &gt; Settings &gt; Basic &gt; App Secret &gt; Show</td><td>Needed</td></tr>
+</table>
+
+<h2><span class="step-num">9</span> AdeptNova Completes the Integration</h2>
+<p>Once we receive the credentials above, we will:</p>
+<ol>
+  <li>Configure the webhook endpoint on our cloud infrastructure</li>
+  <li>Register the webhook URL with your Meta Developer App</li>
+  <li>Connect to the AI Concierge backend</li>
+  <li>Run end-to-end testing with test messages</li>
+  <li>Verify escalation workflows</li>
+  <li>Go live</li>
+</ol>
+<p><strong>Expected time after receiving credentials: 24-48 hours</strong></p>
+
+<h2 class="page-break">What Guests Will Experience</h2>
+<p>Once live, guests can message the WhatsApp number and:</p>
+<ul>
+  <li>Ask about any of the 12 <a href="https://www.oystercollection.co.za/">Oyster Collection</a> properties across South Africa</li>
+  <li>Get restaurant recommendations, menus, and hours</li>
+  <li>Learn about activities, excursions, and spa treatments</li>
+  <li>Inquire about rates and room types</li>
+  <li>Get directions and transfer information</li>
+  <li>Receive answers sourced directly from property knowledge base documents</li>
+  <li>Get escalated to the property team for complex or booking-related requests</li>
+</ul>
+<p>All responses are AI-generated from The Oyster Collection's own knowledge base — no generic or fabricated information.</p>
+
+<h2>Frequently Asked Questions</h2>
+<dl class="faq">
+  <dt>Q: Will we lose our existing WhatsApp conversations?</dt>
+  <dd>If the number is currently on the WhatsApp app, existing chat history will be lost when migrating to the Cloud API. We recommend backing up important conversations before deregistering.</dd>
+
+  <dt>Q: Can we still use WhatsApp manually on a phone?</dt>
+  <dd>No — once a number is registered on the Cloud API, it cannot be used simultaneously on the WhatsApp mobile app. All messages are handled through the API. Complex queries that the AI cannot handle are escalated to your team.</dd>
+
+  <dt>Q: Is there a cost for WhatsApp messages?</dt>
+  <dd>Meta charges per conversation (24-hour window), not per individual message. The first 1,000 service conversations per month are free. After that, South African rates are approximately $0.03-0.08 per conversation. As of July 2025, Meta also applies per-message pricing for certain message categories.</dd>
+
+  <dt>Q: What if the AI can't answer a question?</dt>
+  <dd>The system gracefully escalates to a human team member. Guests receive a message like: "Let me connect you with our team for this. Someone will be in touch shortly."</dd>
+
+  <dt>Q: How long does the full setup take?</dt>
+  <dd>The technical setup takes 1-2 hours. The bottleneck is Meta's business verification, which takes 2-5 business days. Once credentials are shared with us, we go live within 24-48 hours.</dd>
+</dl>
+
+<!-- <h2>Note on Data Privacy (POPIA)</h2>
+<div class="scope-note">
+  <strong>Out of Scope for Current Phase (PoC)</strong><br><br>
+  South Africa's Protection of Personal Information Act (POPIA) imposes requirements on how businesses collect, process, and store personal information — including WhatsApp messages from guests.<br><br>
+  Key POPIA considerations for WhatsApp integration include:
+  <ul>
+    <li>Obtaining explicit consent from guests before processing their messages</li>
+    <li>Providing guests with a clear opt-out mechanism</li>
+    <li>Data retention policies (how long messages are stored)</li>
+    <li>Cross-border data transfer compliance (if data is processed outside South Africa)</li>
+    <li>Security safeguards for personal information</li>
+  </ul>
+  <strong>For the current Proof of Concept (PoC) phase, full POPIA compliance is not in scope.</strong> We recommend addressing POPIA compliance as part of <strong>Phase 2</strong> before production rollout to all guests. This should include a formal Data Processing Agreement (DPA), a privacy notice for guests, consent tracking, and a data retention policy.<br><br>
+  We are happy to assist with POPIA compliance planning in Phase 2.
+</div> -->
+
+<h2 class="page-break">Reference Guides</h2>
+<p>The following official and third-party resources provide additional detail on each step:</p>
+<div class="ref-list">
+<ul>
+  <li><strong>Official Meta Documentation</strong><br>
+    <a href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started" target="_blank">WhatsApp Cloud API — Get Started (Meta Developers)</a></li>
+  <li><strong>Official Meta Business Verification</strong><br>
+    <a href="https://www.facebook.com/business/help/2058515294227817" target="_blank">How to Verify Your Business on Meta</a></li>
+  <li><strong>WhatsApp Business Developer Hub</strong><br>
+    <a href="https://business.whatsapp.com/developers/developer-hub" target="_blank">business.whatsapp.com/developers/developer-hub</a></li>
+  <li><strong>Step-by-Step Cloud API Setup (with screenshots)</strong><br>
+    <a href="https://anjoktechnologies.in/blog/how-to-set-up-whatsapp-cloud-api-step-by-step-in-meta-developer-business-manager" target="_blank">How to Set Up WhatsApp Cloud API — Anjok Technologies</a></li>
+  <li><strong>WhatsApp API Prerequisites</strong><br>
+    <a href="https://www.wati.io/en/blog/whatsapp-api-prerequisites/" target="_blank">Phone, Documents, and Verification Requirements — WATI</a></li>
+  <li><strong>Complete Setup Guide (2025)</strong><br>
+    <a href="https://www.socialintents.com/blog/how-to-set-up-whatsapp-business-api/" target="_blank">How to Set Up WhatsApp Business API — Social Intents</a></li>
+  <li><strong>WhatsApp Cloud API Overview</strong><br>
+    <a href="https://www.plivo.com/blog/whatsapp-cloud-api/" target="_blank">A Complete Guide to WhatsApp Cloud API — Plivo</a></li>
+  <li><strong>WhatsApp Business Automation in South Africa</strong><br>
+    <a href="https://www.bizai.co.za/blog/whatsapp-business-automation-south-africa" target="_blank">WhatsApp Business Automation South Africa — BizAI</a></li>
+  <li><strong>POPIA and WhatsApp</strong><br>
+    <a href="https://www.mondaq.com/southafrica/privacy-protection/1066042/is-whatsapp-popia-compliant" target="_blank">Is WhatsApp POPIA Compliant? — Mondaq</a></li>
+</ul>
+</div>
+
+<h2>Support</h2>
+<p>For any questions during setup, contact:</p>
+<p>
+  <strong>AdeptNova</strong><br>
+  <!-- Contact: Shamal Mali<br>
+  Email: [email]<br>
+  Phone: [phone] -->
+</p>
+<p>We're happy to schedule a screen-share call to walk through any step together.</p>
+
+</body>
+</html>

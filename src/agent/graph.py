@@ -35,7 +35,9 @@ def build_graph(
     # Bind async clients to async node functions
     resolve_fn = partial(resolve_node, redis_client=redis_client)
     retrieve_fn = partial(
-        retrieve_node, qdrant_client=qdrant_client, redis_client=redis_client,
+        retrieve_node,
+        qdrant_client=qdrant_client,
+        redis_client=redis_client,
     )
 
     graph.add_node("resolve", resolve_fn)
