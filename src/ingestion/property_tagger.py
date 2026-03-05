@@ -75,9 +75,7 @@ def tag_property_ids(file_path: Path, kb_root: Path) -> list[PropertyID]:
                 # Only return this specific property if the folder is
                 # property-specific (not a region name)
                 if kb_folder.lower() not in REGION_ALIASES:
-                    logger.debug(
-                        "tagged_by_folder", file=str(rel_path), property_id=pid
-                    )
+                    logger.debug("tagged_by_folder", file=str(rel_path), property_id=pid)
                     return [pid]
 
     # 3. Check if any parent folder is a region → tag ALL properties in that region

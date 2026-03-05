@@ -65,7 +65,8 @@ def create_app() -> FastAPI:
     # Ensures the client always gets structured JSON, never a raw 500.
     @application.exception_handler(Exception)
     async def unhandled_exception_handler(
-        request: Request, exc: Exception,
+        request: Request,
+        exc: Exception,
     ) -> JSONResponse:
         logger.error(
             "unhandled_exception",

@@ -297,14 +297,16 @@ if prompt := st.chat_input(
                 _render_metadata(scope, property_id, cached)
 
                 # Save assistant message to history
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "content": response_text,
-                    "sources": sources,
-                    "scope": scope,
-                    "property_id": property_id,
-                    "cached": cached,
-                })
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": response_text,
+                        "sources": sources,
+                        "scope": scope,
+                        "property_id": property_id,
+                        "cached": cached,
+                    }
+                )
 
             except requests.ConnectionError:
                 st.error(

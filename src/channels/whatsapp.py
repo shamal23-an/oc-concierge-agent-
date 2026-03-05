@@ -51,7 +51,9 @@ def init_whatsapp(app: FastAPI) -> WhatsApp | None:
     def _handle_text(client: WhatsApp, msg: types.Message) -> None:
         """Schedule async pipeline processing for an incoming text message."""
         loop: asyncio.AbstractEventLoop | None = getattr(
-            app.state, "event_loop", None,
+            app.state,
+            "event_loop",
+            None,
         )
         if loop is None or loop.is_closed():
             logger.error("whatsapp_no_event_loop")
@@ -106,7 +108,8 @@ async def _process_message(
         redis_client = get_redis_client(app)
 
         agent = create_agent(
-            qdrant_client=qdrant_client, redis_client=redis_client,
+            qdrant_client=qdrant_client,
+            redis_client=redis_client,
         )
 
         initial_state: AgentState = {
@@ -126,8 +129,7 @@ async def _process_message(
     except SessionLockError:
         log.warning("whatsapp_session_locked")
         response_text = (
-            "I'm still working on your previous message — "
-            "please give me a moment and try again."
+            "I'm still working on your previous message — " "please give me a moment and try again."
         )
     except Exception:
         log.exception("whatsapp_pipeline_error")

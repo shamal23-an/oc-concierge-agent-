@@ -1,4 +1,5 @@
 """Ingestion CLI — parse, chunk, embed, and upsert KB documents to Qdrant."""
+
 from __future__ import annotations
 
 import argparse
@@ -154,11 +155,13 @@ def run_ingestion(
 
             for chunk in chunks:
                 point_id = deterministic_point_id(doc_hash, chunk.chunk_index)
-                all_chunks_data.append({
-                    "point_id": point_id,
-                    "text": chunk.text,
-                    "metadata": chunk.metadata,
-                })
+                all_chunks_data.append(
+                    {
+                        "point_id": point_id,
+                        "text": chunk.text,
+                        "metadata": chunk.metadata,
+                    }
+                )
 
     if dry_run:
         logger.info("dry_run_complete", stats=stats)
