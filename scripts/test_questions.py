@@ -577,7 +577,7 @@ def print_summary(results: list[TestResult]) -> None:
     durations = [r.duration_ms for r in results]
     cached_count = sum(1 for r in results if r.cached)
     print("\nTiming:")
-    print(f"  Avg: {sum(durations)/len(durations):.0f}ms")
+    print(f"  Avg: {sum(durations) / len(durations):.0f}ms")
     print(f"  Min: {min(durations):.0f}ms")
     print(f"  Max: {max(durations):.0f}ms")
     print(f"  Cached: {cached_count}/{total}")

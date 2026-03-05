@@ -141,7 +141,7 @@ async def _process_message(
     except SessionLockError:
         log.warning("whatsapp_session_locked")
         response_text = (
-            "I'm still working on your previous message — " "please give me a moment and try again."
+            "I'm still working on your previous message — please give me a moment and try again."
         )
     except Exception:
         log.exception("whatsapp_pipeline_error")

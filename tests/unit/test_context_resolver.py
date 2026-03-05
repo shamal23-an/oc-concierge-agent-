@@ -51,9 +51,7 @@ class TestSessionContinuity:
     def test_message_overrides_session(self):
         """Message entity takes priority over session."""
         session = SessionData(session_id="abc", active_property="la_fontaine")
-        ctx = resolve_context(
-            "What about Avondrood?", session=session
-        )
+        ctx = resolve_context("What about Avondrood?", session=session)
         assert ctx.property_id == PropertyID.AVONDROOD
 
     def test_context_switch_detected(self):

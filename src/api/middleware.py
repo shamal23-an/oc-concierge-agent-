@@ -15,7 +15,7 @@ logger = structlog.get_logger()
 # Paths that require API key auth (when API_KEY is set)
 _PROTECTED_PATHS = {"/chat"}
 # Paths that are always public
-_PUBLIC_PATHS = {"/health", "/properties", "/docs", "/openapi.json", "/webhook"}
+_PUBLIC_PATHS = {"/health", "/properties", "/docs", "/openapi.json", "/webhook", "/twilio/webhook"}
 
 
 class ApiKeyMiddleware(BaseHTTPMiddleware):

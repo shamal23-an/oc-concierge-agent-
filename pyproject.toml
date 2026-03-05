@@ -25,6 +25,8 @@ dependencies = [
     "llama-index-core==0.12.10",
     "streamlit==1.41.0",
     "pywa==2.0.0",
+    "twilio==9.10.2",
+    "python-multipart==0.0.22",
 ]
 
 [project.optional-dependencies]

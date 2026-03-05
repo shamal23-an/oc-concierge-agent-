@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     chunk_overlap: int = 128
     top_k: int = 5
 
-    # WhatsApp (optional)
+    # WhatsApp — Meta direct (optional)
     whatsapp_token: str = ""
     whatsapp_phone_id: str = ""
     whatsapp_verify_token: str = ""
@@ -53,6 +53,22 @@ class Settings(BaseSettings):
                 self.whatsapp_phone_id,
                 self.whatsapp_verify_token,
                 self.whatsapp_app_secret,
+            ]
+        )
+
+    # Twilio WhatsApp Sandbox (optional)
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_whatsapp_number: str = ""  # e.g. whatsapp:+14155238886
+
+    @property
+    def twilio_enabled(self) -> bool:
+        """True when all required Twilio credentials are configured."""
+        return all(
+            [
+                self.twilio_account_sid,
+                self.twilio_auth_token,
+                self.twilio_whatsapp_number,
             ]
         )
 
