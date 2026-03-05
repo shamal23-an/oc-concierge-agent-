@@ -150,12 +150,12 @@ async def debug_rag(request: Request):
     # Step 2: Check target collection info
     try:
         info = await qdrant.get_collection(settings.qdrant_collection)
+        vectors = info.config.params.vectors
+        vector_size = vectors.size if hasattr(vectors, "size") else str(vectors)
         steps["collection_info"] = {
-            "vectors_count": info.vectors_count,
             "points_count": info.points_count,
-            "vector_size": info.config.params.vectors.size
-            if hasattr(info.config.params.vectors, "size")
-            else str(info.config.params.vectors),
+            "indexed_vectors_count": info.indexed_vectors_count,
+            "vector_size": vector_size,
             "status": str(info.status),
         }
     except Exception as exc:
