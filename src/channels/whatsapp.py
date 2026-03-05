@@ -126,6 +126,18 @@ async def _process_message(
             "I'm sorry, I couldn't process your request.",
         )
 
+        # Interaction audit log
+        log.info(
+            "interaction",
+            channel="whatsapp",
+            message=text[:500],
+            response=response_text[:500],
+            scope=result.get("scope"),
+            property_id=result.get("active_property"),
+            sources=result.get("sources", []),
+            cached=result.get("cache_hit", False),
+        )
+
     except SessionLockError:
         log.warning("whatsapp_session_locked")
         response_text = (

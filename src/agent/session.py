@@ -73,9 +73,16 @@ async def save_session(redis_client: Redis, session: SessionData) -> None:
     """Save session to Redis with TTL."""
     settings = get_settings()
     key = _session_key(session.session_id)
-    await redis_client.setex(
-        key,
-        settings.session_ttl_seconds,
-        json.dumps(session.to_dict()),
-    )
-    logger.debug("session_saved", session_id=session.session_id)
+    try:
+        await redis_client.setex(
+            key,
+            settings.session_ttl_seconds,
+            json.dumps(session.to_dict()),
+        )
+        logger.debug("session_saved", session_id=session.session_id)
+    except Exception as exc:
+        logger.warning(
+            "session_save_error",
+            session_id=session.session_id,
+            error=str(exc),
+        )

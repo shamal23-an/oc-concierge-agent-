@@ -68,6 +68,14 @@ class TestResponseCache:
         result = await get_cached_response(redis, "hello", None, "group")
         assert result == payload
 
+    async def test_hit_bytes_returns_dict(self):
+        """Upstash Redis returns bytes — decode before json.loads."""
+        payload = {"response": "Welcome!", "sources": ["menu.pdf"]}
+        redis = AsyncMock()
+        redis.get.return_value = json.dumps(payload).encode("utf-8")
+        result = await get_cached_response(redis, "hello", None, "group")
+        assert result == payload
+
     async def test_set_calls_setex(self):
         redis = AsyncMock()
         await set_cached_response(
@@ -85,6 +93,13 @@ class TestResponseCache:
         """Cache read errors degrade gracefully to a miss."""
         redis = AsyncMock()
         redis.get.side_effect = ConnectionError("Redis down")
+        result = await get_cached_response(redis, "hello", None, "group")
+        assert result is None
+
+    async def test_corrupt_data_returns_none(self):
+        """Corrupted cache data degrades gracefully to a miss."""
+        redis = AsyncMock()
+        redis.get.return_value = b"not-valid-json{{"
         result = await get_cached_response(redis, "hello", None, "group")
         assert result is None
 
@@ -120,6 +135,22 @@ class TestRetrievalCache:
         ]
         redis = AsyncMock()
         redis.get.return_value = json.dumps(chunks)
+        result = await get_cached_retrieval(redis, "hello", None, "group")
+        assert result == chunks
+
+    async def test_hit_bytes_returns_chunks(self):
+        """Upstash Redis returns bytes — decode before json.loads."""
+        chunks = [
+            {
+                "content": "Dinner is at 7pm",
+                "score": 0.9,
+                "property_ids": ["la_fontaine"],
+                "source_file": "menu.pdf",
+                "metadata": {},
+            },
+        ]
+        redis = AsyncMock()
+        redis.get.return_value = json.dumps(chunks).encode("utf-8")
         result = await get_cached_retrieval(redis, "hello", None, "group")
         assert result == chunks
 

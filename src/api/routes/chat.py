@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import uuid
 
 import structlog
 from fastapi import APIRouter, Request
@@ -31,8 +32,9 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
 
     agent = create_agent(qdrant_client=qdrant_client, redis_client=redis_client)
 
-    # Ensure we have a session_id before locking (generate if not provided)
-    session_id = body.session_id or ""
+    # Generate a session_id if not provided — empty string would cause
+    # all unauthenticated requests to share one lock key.
+    session_id = body.session_id or str(uuid.uuid4())
 
     # Build initial state
     initial_state: AgentState = {
@@ -107,21 +109,30 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
 
     cached = result.get("cache_hit", False)
 
+    response_text = result.get("response", "I'm sorry, I couldn't process your request.")
+    sources = result.get("sources", [])
+
+    # Structured interaction log — audit trail for SOW deliverable.
+    # Each entry captures the full request/response cycle for compliance.
     logger.info(
-        "chat_response",
+        "interaction",
         session_id=result.get("session_id"),
+        channel="api",
+        message=body.message[:500],
+        response=response_text[:500],
         scope=scope,
         property_id=response_pid,
-        num_sources=len(result.get("sources", [])),
+        sources=sources,
+        num_sources=len(sources),
         duration_ms=duration_ms,
         cached=cached,
     )
 
     return ChatResponse(
-        response=result.get("response", "I'm sorry, I couldn't process your request."),
+        response=response_text,
         session_id=result.get("session_id", ""),
         property_id=response_pid,
         scope=scope_enum,
-        sources=result.get("sources", []),
+        sources=sources,
         cached=cached,
     )
