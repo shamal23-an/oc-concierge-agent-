@@ -125,5 +125,3 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
         sources=result.get("sources", []),
         cached=cached,
     )
-
-
