@@ -36,7 +36,9 @@ class TestAcquireSessionLock:
         redis.set.side_effect = [False, True]
 
         token = await acquire_session_lock(
-            redis, "sess-1", wait_timeout=1.0,
+            redis,
+            "sess-1",
+            wait_timeout=1.0,
         )
 
         assert isinstance(token, str)
@@ -48,7 +50,9 @@ class TestAcquireSessionLock:
 
         with pytest.raises(SessionLockError, match="Could not acquire lock"):
             await acquire_session_lock(
-                redis, "sess-1", wait_timeout=0.3,
+                redis,
+                "sess-1",
+                wait_timeout=0.3,
             )
 
     async def test_custom_ttl_passed_to_redis(self):

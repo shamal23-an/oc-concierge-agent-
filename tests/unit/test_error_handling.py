@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -17,7 +17,12 @@ def client():
     app.state.qdrant_client = AsyncMock()
     app.state.redis_client = AsyncMock()
 
-    return TestClient(app, raise_server_exceptions=False)
+    # Patch settings so API_KEY from .env doesn't block test requests
+    mock_settings = MagicMock()
+    mock_settings.api_key = ""
+
+    with patch("src.api.middleware.get_settings", return_value=mock_settings):
+        yield TestClient(app, raise_server_exceptions=False)
 
 
 class TestGlobalExceptionHandler:
@@ -29,12 +34,15 @@ class TestGlobalExceptionHandler:
         # we need to trigger an actual unhandled exception.
         # The health route accesses app.state, so if we break that
         # it'll throw. But easier: patch a route to raise.
-        with patch(
-            "src.api.routes.health.check_qdrant_health",
-            side_effect=RuntimeError("unexpected"),
-        ), patch(
-            "src.api.routes.health.check_redis_health",
-            side_effect=RuntimeError("unexpected"),
+        with (
+            patch(
+                "src.api.routes.health.check_qdrant_health",
+                side_effect=RuntimeError("unexpected"),
+            ),
+            patch(
+                "src.api.routes.health.check_redis_health",
+                side_effect=RuntimeError("unexpected"),
+            ),
         ):
             response = client.get("/health")
 

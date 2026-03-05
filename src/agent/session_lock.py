@@ -64,7 +64,7 @@ async def acquire_session_lock(
         wait_timeout=wait_timeout,
     )
     raise SessionLockError(
-        f"Could not acquire lock for session {session_id} " f"within {wait_timeout}s"
+        f"Could not acquire lock for session {session_id} within {wait_timeout}s"
     )
 
 

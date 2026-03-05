@@ -79,8 +79,12 @@ class TestResponseCache:
     async def test_set_calls_setex(self):
         redis = AsyncMock()
         await set_cached_response(
-            redis, "hello", None, "group",
-            response="Welcome!", sources=["menu.pdf"],
+            redis,
+            "hello",
+            None,
+            "group",
+            response="Welcome!",
+            sources=["menu.pdf"],
         )
         redis.setex.assert_called_once()
         args = redis.setex.call_args
@@ -108,8 +112,12 @@ class TestResponseCache:
         redis = AsyncMock()
         redis.setex.side_effect = ConnectionError("Redis down")
         await set_cached_response(
-            redis, "hello", None, "group",
-            response="Welcome!", sources=[],
+            redis,
+            "hello",
+            None,
+            "group",
+            response="Welcome!",
+            sources=[],
         )
 
 
@@ -166,7 +174,11 @@ class TestRetrievalCache:
             },
         ]
         await set_cached_retrieval(
-            redis, "hello", None, "group", chunks=chunks,
+            redis,
+            "hello",
+            None,
+            "group",
+            chunks=chunks,
         )
         redis.setex.assert_called_once()
         args = redis.setex.call_args
