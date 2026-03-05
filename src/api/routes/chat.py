@@ -177,11 +177,12 @@ async def debug_rag(request: Request):
 
     # Step 4: Search Qdrant
     try:
-        results = await qdrant.search(
+        response = await qdrant.query_points(
             collection_name=settings.qdrant_collection,
-            query_vector=list(vector),
+            query=list(vector),
             limit=3,
         )
+        results = response.points
         steps["search_results"] = [
             {
                 "score": r.score,

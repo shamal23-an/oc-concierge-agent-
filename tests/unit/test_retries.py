@@ -91,10 +91,13 @@ class TestQdrantRetry:
     async def test_retries_on_timeout(self):
         from src.retrieval.strategies import _search_qdrant
 
+        mock_response = AsyncMock()
+        mock_response.points = []
+
         mock_client = AsyncMock()
-        mock_client.search.side_effect = [
+        mock_client.query_points.side_effect = [
             httpx.ReadTimeout("timed out"),
-            [],  # empty results on retry
+            mock_response,
         ]
 
         with patch("src.retrieval.strategies.get_settings") as mock_settings:
@@ -102,13 +105,13 @@ class TestQdrantRetry:
             result = await _search_qdrant(mock_client, [0.1, 0.2])
 
         assert result == []
-        assert mock_client.search.call_count == 2
+        assert mock_client.query_points.call_count == 2
 
     async def test_raises_after_max_attempts(self):
         from src.retrieval.strategies import _search_qdrant
 
         mock_client = AsyncMock()
-        mock_client.search.side_effect = httpx.ConnectError("connection refused")
+        mock_client.query_points.side_effect = httpx.ConnectError("connection refused")
 
         with (
             patch("src.retrieval.strategies.get_settings") as mock_settings,
@@ -118,4 +121,4 @@ class TestQdrantRetry:
             await _search_qdrant(mock_client, [0.1, 0.2])
 
         # 2 attempts total (initial + 1 retry)
-        assert mock_client.search.call_count == 2
+        assert mock_client.query_points.call_count == 2
