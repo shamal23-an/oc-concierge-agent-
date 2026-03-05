@@ -13,7 +13,7 @@ from src.config.settings import get_settings
 logger = structlog.get_logger()
 
 # Paths that require API key auth (when API_KEY is set)
-_PROTECTED_PATHS = {"/chat", "/debug/rag"}
+_PROTECTED_PATHS = {"/chat"}
 # Paths that are always public
 _PUBLIC_PATHS = {"/health", "/properties", "/docs", "/openapi.json", "/webhook"}
 
