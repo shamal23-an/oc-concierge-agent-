@@ -40,15 +40,20 @@ async def get_cached_response(
     key = _RESPONSE_PREFIX + _build_cache_key(message, property_id, scope)
     try:
         data = await redis.get(key)
-    except Exception:
-        logger.warning("response_cache_read_error", key=key)
+    except Exception as exc:
+        logger.warning("response_cache_read_error", key=key, error=str(exc))
         return None
 
     if data is None:
         return None
 
-    logger.debug("response_cache_hit", key=key)
-    return json.loads(data)
+    try:
+        decoded = data.decode("utf-8") if isinstance(data, bytes) else data
+        logger.debug("response_cache_hit", key=key)
+        return json.loads(decoded)
+    except (json.JSONDecodeError, UnicodeDecodeError, AttributeError) as exc:
+        logger.warning("response_cache_decode_error", key=key, error=str(exc))
+        return None
 
 
 async def set_cached_response(
@@ -66,8 +71,8 @@ async def set_cached_response(
     try:
         await redis.setex(key, RESPONSE_CACHE_TTL, payload)
         logger.debug("response_cache_set", key=key, ttl=RESPONSE_CACHE_TTL)
-    except Exception:
-        logger.warning("response_cache_write_error", key=key)
+    except Exception as exc:
+        logger.warning("response_cache_write_error", key=key, error=str(exc))
 
 
 # ── Retrieval cache ──────────────────────────────────────────────────────── #
@@ -83,15 +88,20 @@ async def get_cached_retrieval(
     key = _RETRIEVAL_PREFIX + _build_cache_key(message, property_id, scope)
     try:
         data = await redis.get(key)
-    except Exception:
-        logger.warning("retrieval_cache_read_error", key=key)
+    except Exception as exc:
+        logger.warning("retrieval_cache_read_error", key=key, error=str(exc))
         return None
 
     if data is None:
         return None
 
-    logger.debug("retrieval_cache_hit", key=key)
-    return json.loads(data)
+    try:
+        decoded = data.decode("utf-8") if isinstance(data, bytes) else data
+        logger.debug("retrieval_cache_hit", key=key)
+        return json.loads(decoded)
+    except (json.JSONDecodeError, UnicodeDecodeError, AttributeError) as exc:
+        logger.warning("retrieval_cache_decode_error", key=key, error=str(exc))
+        return None
 
 
 async def set_cached_retrieval(
@@ -108,5 +118,5 @@ async def set_cached_retrieval(
     try:
         await redis.setex(key, RETRIEVAL_CACHE_TTL, payload)
         logger.debug("retrieval_cache_set", key=key, ttl=RETRIEVAL_CACHE_TTL)
-    except Exception:
-        logger.warning("retrieval_cache_write_error", key=key)
+    except Exception as exc:
+        logger.warning("retrieval_cache_write_error", key=key, error=str(exc))

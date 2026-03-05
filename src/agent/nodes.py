@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 import structlog
 from langchain_openai import ChatOpenAI
@@ -41,6 +42,49 @@ from src.retrieval.strategies import layered_retrieve
 _TRANSIENT_LLM_ERRORS = (APITimeoutError, APIConnectionError, RateLimitError)
 
 logger = structlog.get_logger()
+
+# ── LLM singleton ────────────────────────────────────────────────────────── #
+_llm: ChatOpenAI | None = None
+
+
+def _get_llm() -> ChatOpenAI:
+    """Return a cached ChatOpenAI instance (created once, reused)."""
+    global _llm
+    if _llm is None:
+        settings = get_settings()
+        _llm = ChatOpenAI(
+            model=settings.llm_model,
+            temperature=settings.llm_temperature,
+            api_key=settings.openai_api_key,
+            request_timeout=settings.openai_timeout,
+        )
+    return _llm
+
+
+# ── Input sanitization ────────────────────────────────────────────────────── #
+_INJECTION_PATTERNS = re.compile(
+    r"(?i)"
+    r"(ignore\s+(all\s+)?previous\s+instructions|"
+    r"you\s+are\s+now\s+a|"
+    r"system\s*:\s*|"
+    r"<\|.*?\|>|"  # special tokens
+    r"\[INST\]|"  # Llama-style injection
+    r"```system)",
+)
+
+
+def _sanitize_input(message: str) -> str:
+    """Strip known prompt injection patterns from user input.
+
+    Returns the cleaned message. Does NOT block the request — the LLM prompt
+    already constrains the model to Oyster Collection topics.
+    """
+    cleaned = _INJECTION_PATTERNS.sub("", message).strip()
+    # Truncate excessively long messages (prevent token-stuffing)
+    if len(cleaned) > 2000:
+        cleaned = cleaned[:2000]
+    return cleaned or message[:2000]
+
 
 # Greeting responses (no LLM needed)
 GREETING_RESPONSES = [
@@ -99,7 +143,8 @@ async def resolve_node(
     redis_client: Redis,
 ) -> AgentState:
     """Node 1: Resolve context — session, entities, scope."""
-    message = state["message"]
+    message = _sanitize_input(state["message"])
+    state["message"] = message
     session_id = state.get("session_id", "")
     request_pid = state.get("property_id")
 
@@ -208,7 +253,7 @@ async def retrieve_node(
     )
 
     target_pid = str(property_id) if property_id else None
-    ranked = rank_chunks(chunks, target_property_id=target_pid)
+    ranked = rank_chunks(chunks, target_property_id=target_pid, query=message)
 
     state["chunks"] = ranked
 
@@ -258,13 +303,7 @@ async def generate_node(state: AgentState) -> AgentState:
             return state
 
     # ── Normal LLM generation (async) ────────────────────────────────── #
-    settings = get_settings()
-    llm = ChatOpenAI(
-        model=settings.llm_model,
-        temperature=settings.llm_temperature,
-        api_key=settings.openai_api_key,
-        request_timeout=settings.openai_timeout,
-    )
+    llm = _get_llm()
 
     property_name = None
     location = None
