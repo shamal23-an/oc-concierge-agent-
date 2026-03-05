@@ -21,6 +21,7 @@ load_dotenv(_env_path)
 # ── Configuration ─────────────────────────────────────────────────────────── #
 
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+API_KEY = os.getenv("API_KEY", "")
 
 BRAND_GOLD = "#9E8962"
 
@@ -127,9 +128,14 @@ def send_message(
     if session_id:
         payload["session_id"] = session_id
 
+    headers: dict[str, str] = {}
+    if API_KEY:
+        headers["X-API-Key"] = API_KEY
+
     resp = requests.post(
         f"{API_BASE_URL}/chat",
         json=payload,
+        headers=headers,
         timeout=60,
     )
     resp.raise_for_status()
