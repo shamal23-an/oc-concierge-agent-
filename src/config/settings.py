@@ -63,7 +63,11 @@ class Settings(BaseSettings):
     # API
     api_host: str = "0.0.0.0"
     api_port: int = 8000
-    cors_origins: list[str] = ["http://localhost:8501"]
+    api_key: str = ""  # X-API-Key header; empty = no auth (dev mode)
+    cors_origins: list[str] = [
+        "http://localhost:8501",
+        "https://oc-concierge-agent-production.up.railway.app",
+    ]
 
 
 _settings: Settings | None = None
