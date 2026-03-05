@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.api.dependencies import close_clients, init_clients
-from src.api.middleware import RequestLoggingMiddleware
+from src.api.middleware import ApiKeyMiddleware, RequestLoggingMiddleware
 from src.api.routes import chat, health, properties
 from src.channels.whatsapp import init_whatsapp
 from src.config.logging import setup_logging
@@ -50,6 +50,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    application.add_middleware(ApiKeyMiddleware)
     application.add_middleware(RequestLoggingMiddleware)
 
     # Routes

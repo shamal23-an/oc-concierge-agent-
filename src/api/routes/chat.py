@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import traceback
 
 import structlog
 from fastapi import APIRouter, Request
@@ -9,7 +10,9 @@ from fastapi.responses import JSONResponse
 from src.agent.graph import create_agent
 from src.agent.session_lock import SessionLockError, session_lock
 from src.api.dependencies import get_qdrant_client, get_redis_client
+from src.config.settings import get_settings
 from src.domain.schemas import AgentState, ChatRequest, ChatResponse, QueryScope
+from src.retrieval.embedder import embed_query
 
 logger = structlog.get_logger()
 
@@ -59,7 +62,7 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
                 "Please try again shortly.",
             },
         )
-    except Exception:
+    except Exception as exc:
         # Safety net: if anything in the pipeline fails (LLM down,
         # Qdrant unreachable, unexpected bug), return a friendly
         # ChatResponse so the frontend can handle it normally.
@@ -67,6 +70,8 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
             "chat_pipeline_error",
             session_id=session_id,
             message=body.message[:100],
+            error_type=type(exc).__name__,
+            error_message=str(exc),
         )
         duration_ms = round((time.perf_counter() - start) * 1000, 2)
         logger.info(
@@ -123,3 +128,72 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
         sources=result.get("sources", []),
         cached=cached,
     )
+
+
+@router.get("/debug/rag")
+async def debug_rag(request: Request):
+    """Temporary debug endpoint — tests the full RAG pipeline and returns
+    the actual error or raw results. Remove before production."""
+    settings = get_settings()
+    steps: dict = {"collection_name": settings.qdrant_collection}
+
+    qdrant = get_qdrant_client(request.app)
+
+    # Step 1: List collections
+    try:
+        collections = await qdrant.get_collections()
+        steps["collections"] = [c.name for c in collections.collections]
+    except Exception as exc:
+        steps["collections_error"] = f"{type(exc).__name__}: {exc}"
+        return JSONResponse(content=steps, status_code=500)
+
+    # Step 2: Check target collection info
+    try:
+        info = await qdrant.get_collection(settings.qdrant_collection)
+        steps["collection_info"] = {
+            "vectors_count": info.vectors_count,
+            "points_count": info.points_count,
+            "vector_size": info.config.params.vectors.size
+            if hasattr(info.config.params.vectors, "size")
+            else str(info.config.params.vectors),
+            "status": str(info.status),
+        }
+    except Exception as exc:
+        steps["collection_error"] = f"{type(exc).__name__}: {exc}"
+        return JSONResponse(content=steps, status_code=500)
+
+    # Step 3: Embed a test query
+    try:
+        vector = await embed_query("What restaurants are near La Fontaine?")
+        steps["embedding"] = {
+            "dimensions": len(vector),
+            "configured_dimensions": settings.embedding_dimensions,
+            "match": len(vector) == settings.embedding_dimensions,
+        }
+    except Exception as exc:
+        steps["embedding_error"] = f"{type(exc).__name__}: {exc}"
+        steps["embedding_traceback"] = traceback.format_exc()
+        return JSONResponse(content=steps, status_code=500)
+
+    # Step 4: Search Qdrant
+    try:
+        results = await qdrant.search(
+            collection_name=settings.qdrant_collection,
+            query_vector=list(vector),
+            limit=3,
+        )
+        steps["search_results"] = [
+            {
+                "score": r.score,
+                "source_file": (r.payload or {}).get("source_file", ""),
+                "text_preview": (r.payload or {}).get("text", "")[:200],
+            }
+            for r in results
+        ]
+    except Exception as exc:
+        steps["search_error"] = f"{type(exc).__name__}: {exc}"
+        steps["search_traceback"] = traceback.format_exc()
+        return JSONResponse(content=steps, status_code=500)
+
+    steps["status"] = "all_ok"
+    return JSONResponse(content=steps)
