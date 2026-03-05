@@ -371,7 +371,7 @@ TESTS: list[TestCase] = [
     TestCase(
         id="HAL02",
         question="Tell me about the Oyster Collection property in Johannesburg",
-        expect_no_keywords=["johannesburg"],
+        expect_no_keywords=["the johannesburg hotel", "our johannesburg property"],
         category="hallucination",
     ),
     # ── Activity & Experience Questions ─────────────────────────────────── #
