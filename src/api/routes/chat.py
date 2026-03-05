@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import time
-import traceback
 
 import structlog
 from fastapi import APIRouter, Request
@@ -10,9 +9,7 @@ from fastapi.responses import JSONResponse
 from src.agent.graph import create_agent
 from src.agent.session_lock import SessionLockError, session_lock
 from src.api.dependencies import get_qdrant_client, get_redis_client
-from src.config.settings import get_settings
 from src.domain.schemas import AgentState, ChatRequest, ChatResponse, QueryScope
-from src.retrieval.embedder import embed_query
 
 logger = structlog.get_logger()
 
@@ -130,71 +127,3 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
     )
 
 
-@router.get("/debug/rag")
-async def debug_rag(request: Request):
-    """Temporary debug endpoint — tests the full RAG pipeline and returns
-    the actual error or raw results. Remove before production."""
-    settings = get_settings()
-    steps: dict = {"collection_name": settings.qdrant_collection}
-
-    qdrant = get_qdrant_client(request.app)
-
-    # Step 1: List collections
-    try:
-        collections = await qdrant.get_collections()
-        steps["collections"] = [c.name for c in collections.collections]
-    except Exception as exc:
-        steps["collections_error"] = f"{type(exc).__name__}: {exc}"
-        return JSONResponse(content=steps, status_code=500)
-
-    # Step 2: Check target collection info
-    try:
-        info = await qdrant.get_collection(settings.qdrant_collection)
-        vectors = info.config.params.vectors
-        vector_size = vectors.size if hasattr(vectors, "size") else str(vectors)
-        steps["collection_info"] = {
-            "points_count": info.points_count,
-            "indexed_vectors_count": info.indexed_vectors_count,
-            "vector_size": vector_size,
-            "status": str(info.status),
-        }
-    except Exception as exc:
-        steps["collection_error"] = f"{type(exc).__name__}: {exc}"
-        return JSONResponse(content=steps, status_code=500)
-
-    # Step 3: Embed a test query
-    try:
-        vector = await embed_query("What restaurants are near La Fontaine?")
-        steps["embedding"] = {
-            "dimensions": len(vector),
-            "configured_dimensions": settings.embedding_dimensions,
-            "match": len(vector) == settings.embedding_dimensions,
-        }
-    except Exception as exc:
-        steps["embedding_error"] = f"{type(exc).__name__}: {exc}"
-        steps["embedding_traceback"] = traceback.format_exc()
-        return JSONResponse(content=steps, status_code=500)
-
-    # Step 4: Search Qdrant
-    try:
-        response = await qdrant.query_points(
-            collection_name=settings.qdrant_collection,
-            query=list(vector),
-            limit=3,
-        )
-        results = response.points
-        steps["search_results"] = [
-            {
-                "score": r.score,
-                "source_file": (r.payload or {}).get("source_file", ""),
-                "text_preview": (r.payload or {}).get("text", "")[:200],
-            }
-            for r in results
-        ]
-    except Exception as exc:
-        steps["search_error"] = f"{type(exc).__name__}: {exc}"
-        steps["search_traceback"] = traceback.format_exc()
-        return JSONResponse(content=steps, status_code=500)
-
-    steps["status"] = "all_ok"
-    return JSONResponse(content=steps)
