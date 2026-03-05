@@ -47,13 +47,14 @@ async def _search_qdrant(
 ) -> list[RetrievedChunk]:
     """Raw Qdrant search with retry on transient errors."""
     settings = get_settings()
-    results = await client.search(
+    response = await client.query_points(
         collection_name=settings.qdrant_collection,
-        query_vector=vector,
+        query=vector,
         query_filter=filter_,
         limit=limit,
         score_threshold=score_threshold,
     )
+    results = response.points
     chunks: list[RetrievedChunk] = []
     for hit in results:
         payload = hit.payload or {}

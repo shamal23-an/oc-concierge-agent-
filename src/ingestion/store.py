@@ -87,8 +87,8 @@ def get_collection_stats(client: QdrantClient) -> dict:
         info = client.get_collection(settings.qdrant_collection)
         return {
             "points_count": info.points_count,
-            "vectors_count": info.vectors_count,
-            "status": info.status.value,
+            "indexed_vectors_count": info.indexed_vectors_count,
+            "status": str(info.status),
         }
     except Exception:
-        return {"points_count": 0, "vectors_count": 0, "status": "not_found"}
+        return {"points_count": 0, "indexed_vectors_count": 0, "status": "not_found"}
