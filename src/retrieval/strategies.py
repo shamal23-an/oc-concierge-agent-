@@ -50,6 +50,7 @@ async def _search_qdrant(
     response = await client.query_points(
         collection_name=settings.qdrant_collection,
         query=vector,
+        using="dense",
         query_filter=filter_,
         limit=limit,
         score_threshold=score_threshold,

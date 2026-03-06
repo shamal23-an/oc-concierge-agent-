@@ -27,6 +27,7 @@ dependencies = [
     "pywa==2.0.0",
     "twilio==9.10.2",
     "python-multipart==0.0.22",
+    "mmh3==5.1.0",
 ]
 
 [project.optional-dependencies]

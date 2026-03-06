@@ -179,17 +179,25 @@ def run_ingestion(
         logger.warning("no_chunks_to_ingest")
         return stats
 
-    # Embed all chunks
+    # Embed all chunks (dense + sparse)
     logger.info("embedding_chunks", count=len(all_chunks_data))
     texts = [c["text"] for c in all_chunks_data]
     vectors = embed_texts(texts, batch_size=batch_size)
+
+    from src.ingestion.embedder import compute_sparse_vectors
+
+    sparse_vectors = compute_sparse_vectors(texts)
 
     # Upsert
     point_ids = [c["point_id"] for c in all_chunks_data]
     payloads = [{**c["metadata"], "text": c["text"]} for c in all_chunks_data]
 
     stats["points_upserted"] = upsert_chunks(
-        client, point_ids=point_ids, vectors=vectors, payloads=payloads
+        client,
+        point_ids=point_ids,
+        vectors=vectors,
+        payloads=payloads,
+        sparse_vectors=sparse_vectors,
     )
 
     # Final stats
