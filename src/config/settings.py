@@ -33,8 +33,8 @@ class Settings(BaseSettings):
 
     # Retrieval
     confidence_threshold: float = 0.7
-    chunk_size: int = 1024
-    chunk_overlap: int = 128
+    chunk_size: int = 512
+    chunk_overlap: int = 64
     top_k: int = 5
 
     # WhatsApp — Meta direct (optional)
