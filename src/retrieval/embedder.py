@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 import structlog
 from openai import APIConnectionError, APITimeoutError, AsyncOpenAI, RateLimitError
+from qdrant_client.models import SparseVector
 from tenacity import (
     before_sleep_log,
     retry,
@@ -80,3 +81,15 @@ async def embed_query(text: str) -> tuple[float, ...]:
         _cache.popitem(last=False)
 
     return result
+
+
+async def embed_query_hybrid(text: str) -> tuple[tuple[float, ...], SparseVector]:
+    """Embed a query for hybrid search: returns (dense_vector, sparse_vector).
+
+    Dense vector from OpenAI, sparse vector from murmur3 BM25 hashing.
+    """
+    from src.ingestion.embedder import compute_sparse_vector
+
+    dense = await embed_query(text)
+    sparse = compute_sparse_vector(text)
+    return dense, sparse
