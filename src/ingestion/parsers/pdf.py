@@ -154,9 +154,7 @@ class PdfParser:
         extra_sections = []
         for page_num in sorted(tables_md):
             for table in tables_md[page_num]:
-                extra_sections.append(
-                    f"<!-- TABLE: page {page_num} -->\n{table}"
-                )
+                extra_sections.append(f"<!-- TABLE: page {page_num} -->\n{table}")
 
         if extra_sections:
             return md_text + "\n\n" + "\n\n".join(extra_sections)

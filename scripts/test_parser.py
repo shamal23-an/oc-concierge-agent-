@@ -4,6 +4,7 @@ Usage:
     uv run python scripts/test_parser.py [path_to_single_pdf]
     uv run python scripts/test_parser.py  # tests all key PDFs
 """
+
 from __future__ import annotations
 
 import sys
@@ -12,8 +13,8 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.ingestion.parsers.pdf import PdfParser
 from src.ingestion.chunker import chunk_text
+from src.ingestion.parsers.pdf import PdfParser
 
 KB_ROOT = Path(__file__).resolve().parent.parent.parent / "knowldge_base" / "Concierge"
 
@@ -122,7 +123,8 @@ def main():
             test_pdf(pdf)
 
         print("\n" + "=" * 80)
-        print(f"SUMMARY: {results['ok']} parsed, {results['empty']} empty, {results['missing']} missing")
+        ok, empty, missing = results["ok"], results["empty"], results["missing"]
+        print(f"SUMMARY: {ok} parsed, {empty} empty, {missing} missing")
 
 
 if __name__ == "__main__":

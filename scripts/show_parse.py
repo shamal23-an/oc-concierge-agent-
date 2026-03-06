@@ -5,6 +5,7 @@ Usage:
     uv run python scripts/show_parse.py --list              # list all KB PDFs
     uv run python scripts/show_parse.py --pick N            # pick Nth PDF from list
 """
+
 from __future__ import annotations
 
 import io
@@ -16,8 +17,8 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.ingestion.parsers.pdf import PdfParser
-from src.ingestion.chunker import chunk_text
+from src.ingestion.chunker import chunk_text  # noqa: E402
+from src.ingestion.parsers.pdf import PdfParser  # noqa: E402
 
 KB_ROOT = Path(__file__).resolve().parent.parent.parent / "knowldge_base" / "Concierge"
 
@@ -41,7 +42,7 @@ def list_pdfs():
     for i, p in enumerate(pdfs, 1):
         rel = p.relative_to(KB_ROOT)
         print(f"  {CYAN}{i:3d}{RESET}  {rel}")
-    print(f"\n  Usage: uv run python scripts/show_parse.py --pick <number>")
+    print("\n  Usage: uv run python scripts/show_parse.py --pick <number>")
     return pdfs
 
 
@@ -80,13 +81,15 @@ def show_pdf(pdf_path: Path):
             print(f"{num}{line}")
 
     hr()
-    table_rows = sum(1 for l in text.split("\n") if l.strip().startswith("|"))
+    table_rows = sum(1 for row in text.split("\n") if row.strip().startswith("|"))
     table_markers = text.count("<!-- TABLE:")
     page_markers = text.count("<!-- PAGE:")
-    print(f"\n  {BOLD}Stats:{RESET} {len(text)} chars | "
-          f"{GREEN}{table_rows} table rows{RESET} | "
-          f"{YELLOW}{table_markers} TABLE markers{RESET} | "
-          f"{YELLOW}{page_markers} PAGE markers{RESET}")
+    print(
+        f"\n  {BOLD}Stats:{RESET} {len(text)} chars | "
+        f"{GREEN}{table_rows} table rows{RESET} | "
+        f"{YELLOW}{table_markers} TABLE markers{RESET} | "
+        f"{YELLOW}{page_markers} PAGE markers{RESET}"
+    )
 
     # ── STEP 2: Section-aware chunks ───────────────────────────────────────
     print(f"\n\n{BOLD}{YELLOW}STEP 2: SECTION-AWARE CHUNKS{RESET}\n")
@@ -102,10 +105,12 @@ def show_pdf(pdf_path: Path):
         # Chunk header
         hr("=")
         badge = f"{GREEN} [TABLE]{RESET}" if has_table else ""
-        print(f"{BOLD}{CYAN}CHUNK {i}{RESET}  "
-              f"section={BOLD}'{sec}'{RESET}  "
-              f"{pg}  "
-              f"len={len(c.text)}{badge}")
+        print(
+            f"{BOLD}{CYAN}CHUNK {i}{RESET}  "
+            f"section={BOLD}'{sec}'{RESET}  "
+            f"{pg}  "
+            f"len={len(c.text)}{badge}"
+        )
         hr("─")
 
         # Chunk content with highlighting

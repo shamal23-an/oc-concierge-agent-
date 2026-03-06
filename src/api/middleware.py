@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Callable
+from collections.abc import MutableMapping
+from typing import Any
 
 import structlog
-from fastapi import Request, Response
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from src.config.settings import get_settings
 
@@ -18,47 +18,79 @@ _PROTECTED_PATHS = {"/chat"}
 _PUBLIC_PATHS = {"/health", "/properties", "/docs", "/openapi.json", "/webhook", "/twilio/webhook"}
 
 
-class ApiKeyMiddleware(BaseHTTPMiddleware):
-    """Reject requests to protected endpoints without a valid X-API-Key header.
+class ApiKeyMiddleware:
+    """Pure ASGI middleware — reject requests without valid X-API-Key.
 
-    If API_KEY is empty (dev mode), all requests are allowed through.
+    Replaces BaseHTTPMiddleware to avoid the known Starlette bug where
+    exceptions in the response body are swallowed into bare 500s.
     """
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
         settings = get_settings()
 
         # No key configured = dev mode, skip auth
         if not settings.api_key:
-            return await call_next(request)
+            await self.app(scope, receive, send)
+            return
 
-        path = request.url.path.rstrip("/")
+        path = scope["path"].rstrip("/")
 
-        # Only protect specific paths
         if path in _PROTECTED_PATHS:
-            provided = request.headers.get("X-API-Key", "")
+            headers: dict[str, str] = {}
+            for key, value in scope.get("headers", []):
+                headers[key.decode("latin-1").lower()] = value.decode("latin-1")
+
+            provided = headers.get("x-api-key", "")
             if provided != settings.api_key:
                 logger.warning("auth_rejected", path=path, reason="invalid_api_key")
-                return JSONResponse(
+                response = JSONResponse(
                     status_code=401,
                     content={"detail": "Invalid or missing API key."},
                 )
+                await response(scope, receive, send)
+                return
 
-        return await call_next(request)
+        await self.app(scope, receive, send)
 
 
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """Log request method, path, status code, and duration."""
+class RequestLoggingMiddleware:
+    """Pure ASGI middleware — log request method, path, status, and duration.
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    Replaces BaseHTTPMiddleware to avoid swallowed exceptions.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
         start = time.perf_counter()
-        response = await call_next(request)
-        duration_ms = round((time.perf_counter() - start) * 1000, 2)
+        status_code = 500  # default if we never see the response
 
-        logger.info(
-            "http_request",
-            method=request.method,
-            path=request.url.path,
-            status=response.status_code,
-            duration_ms=duration_ms,
-        )
-        return response
+        async def send_wrapper(message: MutableMapping[str, Any]) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_wrapper)
+        finally:
+            duration_ms = round((time.perf_counter() - start) * 1000, 2)
+            logger.info(
+                "http_request",
+                method=scope.get("method", "?"),
+                path=scope.get("path", "?"),
+                status=status_code,
+                duration_ms=duration_ms,
+            )

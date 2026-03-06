@@ -177,9 +177,7 @@ def format_context(chunks: list[dict]) -> str:
     parts = []
     for i, chunk in enumerate(chunks, 1):
         source = chunk.get("source_file", "Unknown")
-        section = chunk.get("metadata", {}).get("section_title") or chunk.get(
-            "section_title"
-        )
+        section = chunk.get("metadata", {}).get("section_title") or chunk.get("section_title")
         page = chunk.get("metadata", {}).get("page_number") or chunk.get("page_number")
         content = chunk.get("content", "")
 

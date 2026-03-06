@@ -348,11 +348,7 @@ async def generate_node(state: AgentState) -> AgentState:
 
     # Detect sparse property (few retrieved chunks)
     chunks = state.get("chunks", [])
-    is_sparse = (
-        scope == "property"
-        and active_pid is not None
-        and len(chunks) < _MIN_CHUNKS_SPARSE
-    )
+    is_sparse = scope == "property" and active_pid is not None and len(chunks) < _MIN_CHUNKS_SPARSE
 
     scope_instructions = build_scope_instructions(
         scope,

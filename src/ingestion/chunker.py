@@ -118,11 +118,13 @@ def _split_into_sections(text: str) -> list[dict]:
             if current_lines:
                 section_text = "\n".join(current_lines).strip()
                 if section_text:
-                    sections.append({
-                        "title": current_title,
-                        "text": section_text,
-                        "page": current_page,
-                    })
+                    sections.append(
+                        {
+                            "title": current_title,
+                            "text": section_text,
+                            "page": current_page,
+                        }
+                    )
             current_title = heading_match.group(2).strip()
             current_lines = []
             continue
@@ -133,19 +135,23 @@ def _split_into_sections(text: str) -> list[dict]:
     if current_lines:
         section_text = "\n".join(current_lines).strip()
         if section_text:
-            sections.append({
-                "title": current_title,
-                "text": section_text,
-                "page": current_page,
-            })
+            sections.append(
+                {
+                    "title": current_title,
+                    "text": section_text,
+                    "page": current_page,
+                }
+            )
 
     # If no sections found (no headings), return the whole text as one section
     if not sections:
-        sections.append({
-            "title": None,
-            "text": text.strip(),
-            "page": None,
-        })
+        sections.append(
+            {
+                "title": None,
+                "text": text.strip(),
+                "page": None,
+            }
+        )
 
     return sections
 
@@ -233,9 +239,7 @@ def _separate_tables(text: str) -> tuple[list[str], list[str]]:
     return tables, non_tables
 
 
-def _interleave_blocks(
-    text: str, table_blocks: list[str]
-) -> list[dict]:
+def _interleave_blocks(text: str, table_blocks: list[str]) -> list[dict]:
     """Split text into alternating table / non-table blocks preserving order."""
     blocks: list[dict] = []
     remaining = text

@@ -35,13 +35,13 @@ class Settings(BaseSettings):
     confidence_threshold: float = 0.7
     chunk_size: int = 512
     chunk_overlap: int = 64
-    top_k: int = 5
+    top_k: int = 7
 
     # Jina Reranker (optional — fallback to local ranking if empty)
     jina_api_key: str = ""
     jina_rerank_model: str = "jina-reranker-v2-base-multilingual"
     jina_rerank_timeout: int = 5  # seconds
-    rerank_min_score: float = 0.25
+    rerank_min_score: float = 0.1
 
     # WhatsApp — Meta direct (optional)
     whatsapp_token: str = ""

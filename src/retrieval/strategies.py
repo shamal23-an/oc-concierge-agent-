@@ -230,16 +230,22 @@ async def layered_retrieve(
 
     if scope == QueryScope.PROPERTY and property_id:
         chunks = await search_property(
-            client, vector, property_id,
-            sparse_vector=sparse_vector, limit=top_k,
+            client,
+            vector,
+            property_id,
+            sparse_vector=sparse_vector,
+            limit=top_k,
         )
 
         # Fallback to region if too few results
         if len(chunks) < MIN_CHUNKS_FOR_CONFIDENCE and region:
             logger.info("retrieval_fallback_to_region", property_id=str(property_id))
             region_chunks = await search_region(
-                client, vector, region,
-                sparse_vector=sparse_vector, limit=top_k,
+                client,
+                vector,
+                region,
+                sparse_vector=sparse_vector,
+                limit=top_k,
             )
             chunks = _merge_chunks(chunks, region_chunks, max_total=top_k)
 
@@ -247,7 +253,10 @@ async def layered_retrieve(
         if len(chunks) < MIN_CHUNKS_FOR_CONFIDENCE:
             logger.info("retrieval_fallback_to_shared", property_id=str(property_id))
             shared_chunks = await search_group(
-                client, vector, sparse_vector=sparse_vector, limit=top_k,
+                client,
+                vector,
+                sparse_vector=sparse_vector,
+                limit=top_k,
             )
             chunks = _merge_chunks(chunks, shared_chunks, max_total=top_k)
 
@@ -255,19 +264,28 @@ async def layered_retrieve(
 
     if scope == QueryScope.REGION and region:
         return await search_region(
-            client, vector, region,
-            sparse_vector=sparse_vector, limit=top_k + 2,
+            client,
+            vector,
+            region,
+            sparse_vector=sparse_vector,
+            limit=top_k + 2,
         )
 
     if scope == QueryScope.CROSS_PROPERTY and property_ids:
         return await search_cross_property(
-            client, vector, property_ids,
-            sparse_vector=sparse_vector, limit=top_k * 2,
+            client,
+            vector,
+            property_ids,
+            sparse_vector=sparse_vector,
+            limit=top_k * 2,
         )
 
     # GROUP or fallback
     return await search_group(
-        client, vector, sparse_vector=sparse_vector, limit=top_k,
+        client,
+        vector,
+        sparse_vector=sparse_vector,
+        limit=top_k,
     )
 
 
