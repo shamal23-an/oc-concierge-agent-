@@ -19,6 +19,7 @@ from tenacity import (
 from src.agent.context_resolver import resolve_context
 from src.agent.prompts import (
     SYSTEM_PROMPT,
+    build_property_list,
     build_scope_instructions,
     format_context,
     format_history,
@@ -30,7 +31,7 @@ from src.cache.response_cache import (
     set_cached_response,
     set_cached_retrieval,
 )
-from src.config.constants import GREETING_PATTERNS, OUT_OF_SCOPE_PATTERNS
+from src.config.constants import BOOKING_PATTERNS, GREETING_PATTERNS, OUT_OF_SCOPE_PATTERNS
 from src.config.settings import get_settings
 from src.domain.properties import PROPERTY_REGISTRY, PropertyID
 from src.domain.schemas import AgentState, QueryScope
@@ -116,6 +117,16 @@ def _is_out_of_scope(message: str) -> bool:
     """Fast-path out-of-scope detection."""
     lower = message.lower()
     return any(p in lower for p in OUT_OF_SCOPE_PATTERNS)
+
+
+def _has_booking_intent(message: str) -> bool:
+    """Detect booking/reservation intent in a message."""
+    lower = message.lower()
+    return any(p in lower for p in BOOKING_PATTERNS)
+
+
+# Threshold: if a property has fewer chunks than this, use sparse scope
+_MIN_CHUNKS_SPARSE = 2
 
 
 def _has_conversation_history(state: AgentState) -> bool:
@@ -303,18 +314,24 @@ async def generate_node(state: AgentState) -> AgentState:
             return state
 
     # ── Normal LLM generation (async) ────────────────────────────────── #
+    import datetime as dt
+
     llm = _get_llm()
 
     property_name = None
     location = None
     region_name = None
     property_names_str = None
+    email = None
+    phone = None
 
     if active_pid:
         info = PROPERTY_REGISTRY.get(PropertyID(active_pid))
         if info:
             property_name = info.full_name
             location = info.location
+            email = info.email
+            phone = info.phone
 
     if state.get("resolved_region"):
         region_name = state["resolved_region"].replace("_", " ").title()
@@ -327,19 +344,35 @@ async def generate_node(state: AgentState) -> AgentState:
                 names.append(info.name)
         property_names_str = ", ".join(names)
 
+    # Detect sparse property (few retrieved chunks)
+    chunks = state.get("chunks", [])
+    is_sparse = (
+        scope == "property"
+        and active_pid is not None
+        and len(chunks) < _MIN_CHUNKS_SPARSE
+    )
+
     scope_instructions = build_scope_instructions(
         scope,
         property_name=property_name,
         location=location,
         region=region_name,
         property_names=property_names_str,
+        email=email,
+        phone=phone,
+        is_sparse=is_sparse,
     )
 
-    chunks = state.get("chunks", [])
     context_str = format_context(chunks)
     history_str = format_history(state.get("conversation_history", []))
 
+    # Inject current date and dynamic property list
+    now = dt.datetime.now(tz=dt.UTC)
+    today_str = now.strftime("Today is %A, %d %B %Y.")
+
     system_message = SYSTEM_PROMPT.format(
+        today=today_str,
+        property_list=build_property_list(),
         scope_instructions=scope_instructions,
         context=context_str,
         history=history_str,

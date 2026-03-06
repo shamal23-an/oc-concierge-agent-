@@ -46,6 +46,8 @@ class PropertyInfo(BaseModel):
     location: str
     aliases: list[str]
     kb_folders: list[str]
+    email: str = ""
+    phone: str = ""
 
 
 # --------------------------------------------------------------------------- #
@@ -67,6 +69,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "la fontaine restaurant",
         ],
         kb_folders=["La Fontaine", "Franschhoek"],
+        email="reservations@lafontaine.co.za",
+        phone="+27 21 876 2112",
     ),
     PropertyID.AVONDROOD: PropertyInfo(
         id=PropertyID.AVONDROOD,
@@ -80,6 +84,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "avondrod",
         ],
         kb_folders=["Avondrood", "Franschhoek"],
+        email="reservations@avondrood.co.za",
+        phone="+27 21 876 2151",
     ),
     PropertyID.PINK_DOOR: PropertyInfo(
         id=PropertyID.PINK_DOOR,
@@ -93,6 +99,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "pinkdoor",
         ],
         kb_folders=["The Pink Door", "Franschhoek"],
+        email="reservations@thepinkdoor.co.za",
+        phone="+27 21 876 2112",
     ),
     PropertyID.POD_CAMPS_BAY: PropertyInfo(
         id=PropertyID.POD_CAMPS_BAY,
@@ -107,6 +115,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "pod camps",
         ],
         kb_folders=["POD Camps Bay", "Cape Town"],
+        email="reservations@podcampsbay.co.za",
+        phone="+27 21 438 1043",
     ),
     PropertyID.BLACKHEATH_LODGE: PropertyInfo(
         id=PropertyID.BLACKHEATH_LODGE,
@@ -120,6 +130,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "black heath",
         ],
         kb_folders=["Blackheath Lodge", "Cape Town"],
+        email="reservations@blackheathlodge.co.za",
+        phone="+27 21 439 2541",
     ),
     PropertyID.CAMP_FIGTREE: PropertyInfo(
         id=PropertyID.CAMP_FIGTREE,
@@ -134,6 +146,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "camp fig tree",
         ],
         kb_folders=["Camp Figtree", "Addo"],
+        email="reservations@campfigtree.co.za",
+        phone="+27 42 235 1436",
     ),
     PropertyID.THE_MILNER: PropertyInfo(
         id=PropertyID.THE_MILNER,
@@ -147,6 +161,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "milner hotel",
         ],
         kb_folders=["The Milner", "Grahamstown"],
+        email="reservations@themilner.co.za",
+        phone="+27 46 622 2722",
     ),
     PropertyID.EIGHT_A: PropertyInfo(
         id=PropertyID.EIGHT_A,
@@ -161,6 +177,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "8 a",
         ],
         kb_folders=["8A", "Grahamstown"],
+        email="reservations@oystercollection.co.za",
+        phone="+27 46 622 2722",
     ),
     PropertyID.PLEASANCE: PropertyInfo(
         id=PropertyID.PLEASANCE,
@@ -173,6 +191,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "the pleasance",
         ],
         kb_folders=["Pleasance", "Grahamstown"],
+        email="reservations@oystercollection.co.za",
+        phone="+27 46 622 2722",
     ),
     PropertyID.BURLINGTON_BUSH: PropertyInfo(
         id=PropertyID.BURLINGTON_BUSH,
@@ -186,6 +206,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "burlington bush cottages",
         ],
         kb_folders=["Burlington Bush", "Salem"],
+        email="reservations@oystercollection.co.za",
+        phone="+27 46 622 2722",
     ),
     PropertyID.OYSTER_BOX: PropertyInfo(
         id=PropertyID.OYSTER_BOX,
@@ -199,6 +221,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "beach house",
         ],
         kb_folders=["Oyster Box", "Kenton-on-Sea"],
+        email="reservations@oystercollection.co.za",
+        phone="+27 46 648 2750",
     ),
     PropertyID.KENTON_HOUSES: PropertyInfo(
         id=PropertyID.KENTON_HOUSES,
@@ -211,6 +235,8 @@ PROPERTY_REGISTRY: dict[PropertyID, PropertyInfo] = {
             "kenton house",
         ],
         kb_folders=["Kenton Houses", "Kenton-on-Sea"],
+        email="reservations@oystercollection.co.za",
+        phone="+27 46 648 2750",
     ),
 }
 
