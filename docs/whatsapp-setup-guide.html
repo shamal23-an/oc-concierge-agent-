@@ -33,6 +33,15 @@
     .important, .note, .scope-note { page-break-inside: avoid; }
     table { page-break-inside: avoid; }
     .ref-list { page-break-inside: avoid; }
+    /* Show full URLs after links so they survive PDF export */
+    a[href^="http"]::after {
+      content: " [" attr(href) "]";
+      font-size: 0.8em;
+      color: #666;
+      word-break: break-all;
+    }
+    /* Don't duplicate URL if the link text IS the URL */
+    a[href^="http"].url-visible::after { content: ""; }
   }
 </style>
 </head>
@@ -68,7 +77,7 @@
 <h2><span class="step-num">1</span> Create or Access Meta Business Manager</h2>
 <p>Meta Business Manager is the central hub where your WhatsApp API access is managed.</p>
 <ol>
-  <li>Go to <strong><a href="https://business.facebook.com">https://business.facebook.com</a></strong></li>
+  <li>Go to <strong><a href="https://business.facebook.com" class="url-visible">https://business.facebook.com</a></strong></li>
   <li>If you already have an account — log in and proceed to Step 2</li>
   <li>If you don't have one:
     <ul>
@@ -112,7 +121,7 @@
 <h2 class="page-break"><span class="step-num">3</span> Create a Meta Developer App</h2>
 <p>In addition to Business Manager, you need a Meta Developer App — this is where WhatsApp Cloud API is enabled.</p>
 <ol>
-  <li>Go to <strong><a href="https://developers.facebook.com">https://developers.facebook.com</a></strong></li>
+  <li>Go to <strong><a href="https://developers.facebook.com" class="url-visible">https://developers.facebook.com</a></strong></li>
   <li>Log in with the same Facebook account used for Business Manager</li>
   <li>Click <strong>"My Apps"</strong> &gt; <strong>"Create App"</strong></li>
   <li>Select app type: <strong>"Business"</strong></li>
@@ -272,7 +281,7 @@
   <li><strong>Official Meta Business Verification</strong><br>
     <a href="https://www.facebook.com/business/help/2058515294227817" target="_blank">How to Verify Your Business on Meta</a></li>
   <li><strong>WhatsApp Business Developer Hub</strong><br>
-    <a href="https://business.whatsapp.com/developers/developer-hub" target="_blank">business.whatsapp.com/developers/developer-hub</a></li>
+    <a href="https://business.whatsapp.com/developers/developer-hub" target="_blank" class="url-visible">business.whatsapp.com/developers/developer-hub</a></li>
   <li><strong>Step-by-Step Cloud API Setup (with screenshots)</strong><br>
     <a href="https://anjoktechnologies.in/blog/how-to-set-up-whatsapp-cloud-api-step-by-step-in-meta-developer-business-manager" target="_blank">How to Set Up WhatsApp Cloud API — Anjok Technologies</a></li>
   <li><strong>WhatsApp API Prerequisites</strong><br>

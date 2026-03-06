@@ -12,6 +12,8 @@ import structlog
 # Add project root to path for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from qdrant_client import QdrantClient
+
 from src.config.constants import SUPPORTED_EXTENSIONS
 from src.config.logging import setup_logging
 from src.config.settings import get_settings
@@ -63,8 +65,6 @@ def run_ingestion(
     batch_size: int = 100,
 ) -> dict:
     """Run the full ingestion pipeline."""
-    from qdrant_client import QdrantClient
-
     from src.ingestion.embedder import embed_texts
     from src.ingestion.store import ensure_collection, get_collection_stats, upsert_chunks
 
@@ -179,17 +179,25 @@ def run_ingestion(
         logger.warning("no_chunks_to_ingest")
         return stats
 
-    # Embed all chunks
+    # Embed all chunks (dense + sparse)
     logger.info("embedding_chunks", count=len(all_chunks_data))
     texts = [c["text"] for c in all_chunks_data]
     vectors = embed_texts(texts, batch_size=batch_size)
+
+    from src.ingestion.embedder import compute_sparse_vectors
+
+    sparse_vectors = compute_sparse_vectors(texts)
 
     # Upsert
     point_ids = [c["point_id"] for c in all_chunks_data]
     payloads = [{**c["metadata"], "text": c["text"]} for c in all_chunks_data]
 
     stats["points_upserted"] = upsert_chunks(
-        client, point_ids=point_ids, vectors=vectors, payloads=payloads
+        client,
+        point_ids=point_ids,
+        vectors=vectors,
+        payloads=payloads,
+        sparse_vectors=sparse_vectors,
     )
 
     # Final stats
@@ -208,6 +216,107 @@ def run_ingestion(
         print(f"  {pid}: {count} files")
 
     return stats
+
+
+def run_verification(client: QdrantClient) -> None:
+    """Run a test query per property to verify ingestion quality."""
+    from src.domain.properties import PROPERTY_REGISTRY, PropertyID
+    from src.ingestion.embedder import embed_texts
+
+    settings = get_settings()
+    collection_name = settings.qdrant_collection
+
+    print("\n=== VERIFICATION ===")
+
+    test_queries = {
+        PropertyID.LA_FONTAINE: "What are the rates at La Fontaine?",
+        PropertyID.AVONDROOD: "Tell me about Avondrood spa treatments",
+        PropertyID.PINK_DOOR: "What rooms does The Pink Door have?",
+        PropertyID.POD_CAMPS_BAY: "What are the rates at POD Camps Bay?",
+        PropertyID.BLACKHEATH_LODGE: "Tell me about Blackheath Lodge",
+        PropertyID.CAMP_FIGTREE: "What activities are at Camp Figtree?",
+        PropertyID.THE_MILNER: "What rooms does The Milner have?",
+        PropertyID.EIGHT_A: "Tell me about 8A Guest House",
+        PropertyID.PLEASANCE: "Tell me about Pleasance",
+        PropertyID.BURLINGTON_BUSH: "What is Burlington Bush?",
+        PropertyID.OYSTER_BOX: "Tell me about Oyster Box Beach House",
+        PropertyID.KENTON_HOUSES: "Tell me about Kenton Houses",
+    }
+
+    # Embed all test queries at once
+    queries = list(test_queries.values())
+    pids = list(test_queries.keys())
+    vectors = embed_texts(queries)
+
+    from qdrant_client.models import FieldCondition, Filter, MatchValue
+
+    total_ok = 0
+    total_props = 0
+
+    for pid, query, vector in zip(pids, queries, vectors):
+        if pid == PropertyID.SHARED:
+            continue
+        total_props += 1
+
+        # Count total chunks for this property
+        count_result = client.count(
+            collection_name=collection_name,
+            count_filter=Filter(
+                must=[FieldCondition(key="property_ids", match=MatchValue(value=str(pid)))]
+            ),
+        )
+        chunk_count = count_result.count
+
+        # Search with property filter
+        results = client.query_points(
+            collection_name=collection_name,
+            query=vector,
+            using="dense",
+            query_filter=Filter(
+                must=[FieldCondition(key="property_ids", match=MatchValue(value=str(pid)))]
+            ),
+            limit=3,
+        )
+        top_scores = [round(p.score, 3) for p in results.points]
+
+        # Check metadata fields
+        has_section = False
+        has_page = False
+        for p in results.points:
+            payload = p.payload or {}
+            if payload.get("section_title"):
+                has_section = True
+            if payload.get("page_number"):
+                has_page = True
+
+        info = PROPERTY_REGISTRY.get(pid)
+        name = info.name if info else str(pid)
+
+        status = "OK" if chunk_count > 0 else "EMPTY"
+        if chunk_count > 0:
+            total_ok += 1
+
+        meta_flags = []
+        if has_section:
+            meta_flags.append("section")
+        if has_page:
+            meta_flags.append("page")
+
+        meta_str = f" [{', '.join(meta_flags)}]" if meta_flags else ""
+        print(
+            f"  {status:5s}  {name:25s}  "
+            f"chunks={chunk_count:3d}  "
+            f"scores={top_scores}{meta_str}"
+        )
+
+    print(f"\n  {total_ok}/{total_props} properties have chunks")
+
+    # Collection-wide stats
+    info = client.get_collection(collection_name)
+    print(f"  Total points: {info.points_count}")
+    print(f"  Vectors config: {list(info.config.params.vectors.keys())}")
+    has_sparse_config = info.config.params.sparse_vectors is not None
+    print(f"  Sparse vectors: {'yes' if has_sparse_config else 'no'}")
 
 
 def main() -> None:
@@ -229,6 +338,11 @@ def main() -> None:
         help="Parse and tag without embedding/upserting (verify tagging)",
     )
     parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="Run test queries per property after ingestion",
+    )
+    parser.add_argument(
         "--batch-size",
         type=int,
         default=100,
@@ -248,6 +362,18 @@ def main() -> None:
         dry_run=args.dry_run,
         batch_size=args.batch_size,
     )
+
+    if args.verify and not args.dry_run:
+        settings = get_settings()
+        if settings.qdrant_url:
+            client = QdrantClient(
+                url=settings.qdrant_url,
+                api_key=settings.qdrant_api_key or None,
+            )
+        else:
+            client = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+        run_verification(client)
+
     elapsed = round(time.perf_counter() - start, 1)
     print(f"\nElapsed: {elapsed}s")
 

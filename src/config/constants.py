@@ -50,3 +50,21 @@ OUT_OF_SCOPE_PATTERNS = {
     "who is the president",
     "capital of",
 }
+
+# Booking intent patterns (trigger lead capture flow)
+BOOKING_PATTERNS = {
+    "book",
+    "booking",
+    "reserve",
+    "reservation",
+    "availability",
+    "available dates",
+    "check in",
+    "check-in",
+    "check out",
+    "check-out",
+    "i want to stay",
+    "make a reservation",
+    "book a room",
+    "book a stay",
+}

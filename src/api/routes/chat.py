@@ -26,27 +26,22 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
     block the event loop.
     """
     start = time.perf_counter()
-
-    qdrant_client = get_qdrant_client(request.app)
-    redis_client = get_redis_client(request.app)
-
-    agent = create_agent(qdrant_client=qdrant_client, redis_client=redis_client)
-
-    # Generate a session_id if not provided — empty string would cause
-    # all unauthenticated requests to share one lock key.
     session_id = body.session_id or str(uuid.uuid4())
 
-    # Build initial state
-    initial_state: AgentState = {
-        "message": body.message,
-        "property_id": body.property_id,
-        "session_id": session_id,
-    }
-
-    # Acquire per-session lock, then run the graph.
-    # This prevents concurrent requests for the same session from
-    # causing read-modify-write race conditions on session data.
     try:
+        qdrant_client = get_qdrant_client(request.app)
+        redis_client = get_redis_client(request.app)
+
+        agent = create_agent(qdrant_client=qdrant_client, redis_client=redis_client)
+
+        # Build initial state
+        initial_state: AgentState = {
+            "message": body.message,
+            "property_id": body.property_id,
+            "session_id": session_id,
+        }
+
+        # Acquire per-session lock, then run the graph.
         async with session_lock(redis_client, session_id):
             result = await agent.ainvoke(initial_state)
     except SessionLockError:
@@ -62,9 +57,6 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
             },
         )
     except Exception as exc:
-        # Safety net: if anything in the pipeline fails (LLM down,
-        # Qdrant unreachable, unexpected bug), return a friendly
-        # ChatResponse so the frontend can handle it normally.
         logger.exception(
             "chat_pipeline_error",
             session_id=session_id,
