@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     chunk_overlap: int = 64
     top_k: int = 5
 
+    # Jina Reranker (optional — fallback to local ranking if empty)
+    jina_api_key: str = ""
+    jina_rerank_model: str = "jina-reranker-v2-base-multilingual"
+    jina_rerank_timeout: int = 5  # seconds
+    rerank_min_score: float = 0.25
+
     # WhatsApp — Meta direct (optional)
     whatsapp_token: str = ""
     whatsapp_phone_id: str = ""

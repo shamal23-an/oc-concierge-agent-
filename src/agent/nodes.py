@@ -35,8 +35,8 @@ from src.config.constants import BOOKING_PATTERNS, GREETING_PATTERNS, OUT_OF_SCO
 from src.config.settings import get_settings
 from src.domain.properties import PROPERTY_REGISTRY, PropertyID
 from src.domain.schemas import AgentState, QueryScope
-from src.retrieval.embedder import embed_query
-from src.retrieval.ranker import rank_chunks
+from src.retrieval.embedder import embed_query_hybrid
+from src.retrieval.ranker import rerank_chunks
 from src.retrieval.strategies import layered_retrieve
 
 # Retry on transient OpenAI errors only (timeout, connection, rate limit).
@@ -231,7 +231,8 @@ async def retrieve_node(
             return state
 
     # ── Normal retrieval (async) ─────────────────────────────────────── #
-    vector = list(await embed_query(message))
+    dense_vector, sparse_vector = await embed_query_hybrid(message)
+    vector = list(dense_vector)
 
     property_id = None
     property_ids = None
@@ -261,10 +262,11 @@ async def retrieve_node(
         property_id=property_id,
         property_ids=property_ids,
         region=region,
+        sparse_vector=sparse_vector,
     )
 
-    target_pid = str(property_id) if property_id else None
-    ranked = rank_chunks(chunks, target_property_id=target_pid, query=message)
+    # Re-rank with Jina (falls back to local ranker if unconfigured)
+    ranked = await rerank_chunks(message, chunks)
 
     state["chunks"] = ranked
 
