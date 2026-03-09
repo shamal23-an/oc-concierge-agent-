@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import time
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
-from qdrant_client import AsyncQdrantClient
-from redis.asyncio import Redis
 
 from src.agent.nodes import generate_node, resolve_node, retrieve_node
 from src.api.dependencies import get_qdrant_client, get_redis_client
@@ -41,11 +39,12 @@ class DebugResponse(BaseModel):
 
 @router.post("/chat/debug", response_model=DebugResponse)
 async def chat_debug(
+    http_request: Request,
     request: ChatRequest,
-    qdrant_client: AsyncQdrantClient = Depends(get_qdrant_client),
-    redis_client: Redis = Depends(get_redis_client),
 ) -> DebugResponse:
     """Debug chat endpoint — returns full pipeline details."""
+    qdrant_client = get_qdrant_client(http_request.app)
+    redis_client = get_redis_client(http_request.app)
     settings = get_settings()
     if not settings.api_key:
         pass  # Allow in dev mode

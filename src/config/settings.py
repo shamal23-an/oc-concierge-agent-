@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     jina_api_key: str = ""
     jina_rerank_model: str = "jina-reranker-v2-base-multilingual"
     jina_rerank_timeout: int = 5  # seconds
-    rerank_min_score: float = 0.25
+    rerank_min_score: float = 0.15
 
     # Ranking quality controls
     max_chunks_per_source: int = 3  # Source diversity: max chunks from same file

@@ -115,13 +115,11 @@ _TRADE_PORTAL_RATES_INCLUDES = [
 
 
 CONCIERGE_SOURCE = SourceConfig(
-    root=Path("D:/Work/Projects/Oyster-Collection/knowldge_base/Concierge"),
+    root=Path("D:/Work/Projects/Oyster-Collection/knowldge_base/Curated/Concierge"),
 )
 
 TRADE_PORTAL_SOURCE = SourceConfig(
-    root=Path("D:/Work/Projects/Oyster-Collection/knowldge_base/Trade-Portal"),
-    include_patterns=_TRADE_PORTAL_RATES_INCLUDES + _TRADE_PORTAL_PROPERTY_INCLUDES,
-    exclude_patterns=_TRADE_PORTAL_EXCLUDES,
+    root=Path("D:/Work/Projects/Oyster-Collection/knowldge_base/Curated/Trade-Portal"),
 )
 
 DEFAULT_SOURCES = [TRADE_PORTAL_SOURCE, CONCIERGE_SOURCE]
