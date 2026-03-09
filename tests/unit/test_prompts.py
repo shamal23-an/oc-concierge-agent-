@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from src.agent.prompts import (
+    SYSTEM_PROMPT,
     build_property_list,
     build_scope_instructions,
     format_context,
@@ -150,8 +151,34 @@ class TestFormatHistory:
         assert "User: Hello" in result
         assert "Assistant: Hi there!" in result
 
-    def test_truncates_to_6(self):
-        history = [{"role": "user", "content": f"msg {i}"} for i in range(10)]
+    def test_returns_10_messages(self):
+        """Should include last 10 messages, not 6."""
+        history = [{"role": "user", "content": f"msg {i}"} for i in range(15)]
         result = format_history(history)
-        assert "msg 4" in result
-        assert "msg 3" not in result
+        lines = [line for line in result.strip().split("\n") if line.strip()]
+        assert len(lines) == 10
+
+    def test_short_history_all_included(self):
+        history = [
+            {"role": "user", "content": "hello"},
+            {"role": "assistant", "content": "hi there"},
+        ]
+        result = format_history(history)
+        assert "hello" in result
+        assert "hi there" in result
+
+
+class TestSystemPrompt:
+    """System prompt content tests."""
+
+    def test_conversation_continuity_section(self):
+        """Prompt should contain conversation continuity instructions."""
+        assert "Conversation Continuity" in SYSTEM_PROMPT
+
+    def test_contact_escalation_rule(self):
+        """Prompt should limit 'contact directly' usage."""
+        assert "Contact Escalation" in SYSTEM_PROMPT
+
+    def test_context_and_history(self):
+        """Prompt should reference both context AND conversation history."""
+        assert "context documents AND conversation history" in SYSTEM_PROMPT

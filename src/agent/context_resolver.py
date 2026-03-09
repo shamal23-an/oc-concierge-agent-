@@ -44,9 +44,11 @@ def resolve_context(
     1. Explicit request property_id parameter
     2. Property/region detected in message text
     3. Session's active_property (conversation continuity)
-    4. Group-level (collection-wide query)
+    4. Session's active_region (region continuity)
+    5. Group-level (collection-wide query)
 
     Comparison queries are detected and handled specially.
+    Single-property regions auto-promote to PROPERTY scope.
     """
     entities = extract_entities(message)
 
@@ -96,10 +98,24 @@ def resolve_context(
             property_ids=entities.properties,
         )
 
-    # 5. Region in message
+    # 5. Region in message — auto-promote single-property regions
     if entities.has_region:
         region = entities.regions[0]
         region_pids = get_properties_for_region(region)
+        if len(region_pids) == 1:
+            # Single-property region: auto-promote to PROPERTY scope
+            pid = region_pids[0]
+            logger.debug(
+                "context_region_auto_promote",
+                region=str(region),
+                property_id=str(pid),
+            )
+            return ResolvedContext(
+                scope=QueryScope.PROPERTY,
+                property_id=pid,
+                property_ids=[pid],
+                region=region,
+            )
         logger.debug("context_from_region", region=str(region))
         return ResolvedContext(
             scope=QueryScope.REGION,
@@ -117,6 +133,33 @@ def resolve_context(
                 scope=QueryScope.PROPERTY,
                 property_id=pid,
                 property_ids=[pid],
+                region=region,
+            )
+        except ValueError:
+            pass
+
+    # 6b. Session continuity — use active_region
+    if session and session.active_region:
+        try:
+            region = Region(session.active_region)
+            region_pids = get_properties_for_region(region)
+            if len(region_pids) == 1:
+                pid = region_pids[0]
+                logger.debug(
+                    "context_session_region_promote",
+                    region=str(region),
+                    property_id=str(pid),
+                )
+                return ResolvedContext(
+                    scope=QueryScope.PROPERTY,
+                    property_id=pid,
+                    property_ids=[pid],
+                    region=region,
+                )
+            logger.debug("context_from_session_region", region=str(region))
+            return ResolvedContext(
+                scope=QueryScope.REGION,
+                property_ids=region_pids,
                 region=region,
             )
         except ValueError:

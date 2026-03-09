@@ -166,11 +166,11 @@ class TestTradePortalTagging:
         assert result == [PropertyID.CAMP_FIGTREE]
 
     def test_rates_subfolder_camp_figtree_typo(self):
-        """Real-world typo 'Figtee' — falls back to shared since no alias match."""
+        """Real-world typo 'Figtee' — now matches via 'camp figtee' alias."""
         path = Path("/kb/Rates/Rates - Camp Figtee/" "CFT Rates 2025 -Jan 2027.pdf")
         result = tag_property_ids(path, self.KB_ROOT)
-        # "Camp Figtee" doesn't match any alias — fallback to shared
-        assert result == [PropertyID.SHARED]
+        # "Camp Figtee" alias was added to handle this Trade-Portal typo
+        assert result == [PropertyID.CAMP_FIGTREE]
 
     def test_kenton_houses_brochure(self):
         """File in Kenton folder with unique filename."""

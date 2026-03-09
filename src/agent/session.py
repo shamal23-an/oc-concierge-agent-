@@ -20,10 +20,14 @@ class SessionData:
         session_id: str,
         *,
         active_property: str | None = None,
+        active_region: str | None = None,
+        booking_details: dict | None = None,
         conversation_history: list[dict] | None = None,
     ):
         self.session_id = session_id
         self.active_property = active_property
+        self.active_region = active_region
+        self.booking_details = booking_details
         self.conversation_history: list[dict] = conversation_history or []
 
     def add_message(self, role: str, content: str) -> None:
@@ -36,6 +40,8 @@ class SessionData:
         return {
             "session_id": self.session_id,
             "active_property": self.active_property,
+            "active_region": self.active_region,
+            "booking_details": self.booking_details,
             "conversation_history": self.conversation_history,
         }
 
@@ -44,6 +50,8 @@ class SessionData:
         return cls(
             session_id=data["session_id"],
             active_property=data.get("active_property"),
+            active_region=data.get("active_region"),
+            booking_details=data.get("booking_details"),
             conversation_history=data.get("conversation_history", []),
         )
 

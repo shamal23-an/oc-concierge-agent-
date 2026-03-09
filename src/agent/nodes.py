@@ -192,7 +192,13 @@ async def resolve_node(
     state["scope"] = ctx.scope
     state["resolved_properties"] = [str(p) for p in ctx.property_ids]
     state["resolved_region"] = str(ctx.region) if ctx.region else None
-    state["active_property"] = str(ctx.property_id) if ctx.property_id else None
+    # Preserve session active_property if context resolution didn't find a specific one
+    if ctx.property_id:
+        state["active_property"] = str(ctx.property_id)
+    elif session.active_property and ctx.scope in (QueryScope.REGION, QueryScope.GROUP):
+        state["active_property"] = session.active_property
+    else:
+        state["active_property"] = None
     state["conversation_history"] = session.conversation_history
 
     # Store session ref for later save
@@ -383,6 +389,32 @@ async def generate_node(state: AgentState) -> AgentState:
     context_str = format_context(chunks)
     history_str = format_history(state.get("conversation_history", []))
 
+    # Inject booking progress if we have details
+    session = state.get("_session")  # type: ignore[typeddict-item]
+    booking_progress = ""
+    if session and session.booking_details and _has_booking_intent(state["message"]):
+        booking = session.booking_details
+        parts = []
+        if booking.get("property"):
+            parts.append(f"Property: {booking['property']}")
+        if booking.get("check_in"):
+            parts.append(f"Check-in: {booking['check_in']}")
+        if booking.get("check_out"):
+            parts.append(f"Check-out: {booking['check_out']}")
+        if booking.get("guests"):
+            parts.append(f"Guests: {booking['guests']}")
+        if booking.get("nights"):
+            parts.append(f"Nights: {booking['nights']}")
+        if booking.get("room"):
+            parts.append(f"Room: {booking['room']}")
+        if parts:
+            booking_progress = (
+                "\n\n## Current Booking Progress\n"
+                "The guest has already provided:\n"
+                + "\n".join(f"- {p}" for p in parts)
+                + "\nOnly ask for details that are MISSING. Do NOT re-ask for these."
+            )
+
     # Inject current date and dynamic property list
     now = dt.datetime.now(tz=dt.UTC)
     today_str = now.strftime("Today is %A, %d %B %Y.")
@@ -394,6 +426,9 @@ async def generate_node(state: AgentState) -> AgentState:
         context=context_str,
         history=history_str,
     )
+
+    if booking_progress:
+        system_message += booking_progress
 
     # LLM call with retry on transient errors
     state["response"] = await _invoke_llm(
@@ -427,12 +462,62 @@ async def generate_node(state: AgentState) -> AgentState:
     return state
 
 
+def _extract_booking_details(message: str, existing: dict | None = None) -> dict | None:
+    """Extract booking-related details from user message.
+
+    Merges with existing booking details (doesn't overwrite with None).
+    """
+    details = dict(existing) if existing else {}
+    lower = message.lower()
+
+    # Date patterns (e.g., "15 March", "March 15", "2026-03-15", "15/03/2026")
+    date_patterns = [
+        r"\b(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s*(\d{4})?\b",
+        r"\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+(\d{1,2})\s*,?\s*(\d{4})?\b",
+        r"\b(\d{4}[-/]\d{1,2}[-/]\d{1,2})\b",
+        r"\b(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})\b",
+    ]
+    dates_found = []
+    for pattern in date_patterns:
+        matches = re.findall(pattern, lower)
+        if matches:
+            dates_found.extend(matches)
+
+    if dates_found:
+        # Store raw date strings for the LLM to interpret
+        date_strs = [" ".join(m) if isinstance(m, tuple) else m for m in dates_found]
+        if len(date_strs) >= 2:
+            details["check_in"] = date_strs[0].strip()
+            details["check_out"] = date_strs[1].strip()
+        elif "check_in" not in details:
+            details["check_in"] = date_strs[0].strip()
+
+    # Guest count
+    guest_match = re.search(r"\b(\d+)\s*(?:guest|person|people|adult|pax)\w*\b", lower)
+    if guest_match:
+        details["guests"] = int(guest_match.group(1))
+
+    # Night count
+    night_match = re.search(r"\b(\d+)\s*(?:night|nite)s?\b", lower)
+    if night_match:
+        details["nights"] = int(night_match.group(1))
+
+    return details if details else None
+
+
 async def _save_session(state: AgentState) -> None:
     """Save session to Redis (extracted to avoid duplication)."""
     session = state.get("_session")  # type: ignore[typeddict-item]
     redis_client = state.get("_redis")  # type: ignore[typeddict-item]
     if session and redis_client:
         session.active_property = state.get("active_property")
+        # Save region for session continuity
+        if state.get("resolved_region"):
+            session.active_region = state["resolved_region"]
+        # Extract and save booking details from user message
+        booking = _extract_booking_details(state["message"], session.booking_details)
+        if booking:
+            session.booking_details = booking
         session.add_message("user", state["message"])
         session.add_message("assistant", state["response"])
         await save_session(redis_client, session)
