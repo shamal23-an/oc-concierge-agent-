@@ -513,9 +513,9 @@ def main():
     print("=" * 100)
 
     for cat, items in categories.items():
-        print(f"\n{'─' * 100}")
+        print(f"\n{'-' * 100}")
         print(f"  {cat.upper().replace('_', ' ')}")
-        print(f"{'─' * 100}")
+        print(f"{'-' * 100}")
 
         for r in items:
             verdict_color = {
