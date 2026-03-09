@@ -47,9 +47,7 @@ class TestHybridSearch:
     @pytest.mark.asyncio
     async def test_dense_only_when_no_sparse(self, mock_client, mock_settings):
         """Without sparse vector, should use dense-only query."""
-        mock_client.query_points.return_value = MagicMock(
-            points=[_mock_point(0.8)]
-        )
+        mock_client.query_points.return_value = MagicMock(points=[_mock_point(0.8)])
 
         results = await _search_qdrant(mock_client, [0.1] * 10)
 
@@ -66,9 +64,7 @@ class TestHybridSearch:
         )
         sparse = SparseVector(indices=[1, 5, 10], values=[0.5, 0.8, 0.3])
 
-        results = await _search_qdrant(
-            mock_client, [0.1] * 10, sparse_vector=sparse
-        )
+        results = await _search_qdrant(mock_client, [0.1] * 10, sparse_vector=sparse)
 
         call_kwargs = mock_client.query_points.call_args[1]
         assert "prefetch" in call_kwargs
@@ -78,9 +74,7 @@ class TestHybridSearch:
     @pytest.mark.asyncio
     async def test_empty_sparse_uses_dense_only(self, mock_client, mock_settings):
         """Empty sparse vector (no indices) should fall back to dense-only."""
-        mock_client.query_points.return_value = MagicMock(
-            points=[_mock_point(0.6)]
-        )
+        mock_client.query_points.return_value = MagicMock(points=[_mock_point(0.6)])
         sparse = SparseVector(indices=[], values=[])
 
         await _search_qdrant(mock_client, [0.1] * 10, sparse_vector=sparse)
@@ -92,9 +86,7 @@ class TestHybridSearch:
     @pytest.mark.asyncio
     async def test_search_property_passes_sparse(self, mock_client, mock_settings):
         """search_property should forward sparse_vector."""
-        mock_client.query_points.return_value = MagicMock(
-            points=[_mock_point(0.8)]
-        )
+        mock_client.query_points.return_value = MagicMock(points=[_mock_point(0.8)])
         sparse = SparseVector(indices=[1], values=[0.5])
 
         await search_property(
@@ -133,9 +125,7 @@ class TestLayeredRetrieveHybrid:
     @pytest.mark.asyncio
     async def test_group_scope_with_sparse(self, mock_client, mock_settings):
         """GROUP scope should also support sparse vectors."""
-        mock_client.query_points.return_value = MagicMock(
-            points=[_mock_point(0.6)]
-        )
+        mock_client.query_points.return_value = MagicMock(points=[_mock_point(0.6)])
         sparse = SparseVector(indices=[5], values=[0.9])
 
         results = await layered_retrieve(

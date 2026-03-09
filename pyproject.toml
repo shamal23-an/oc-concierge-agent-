@@ -28,6 +28,7 @@ dependencies = [
     "twilio==9.10.2",
     "python-multipart==0.0.22",
     "mmh3==5.1.0",
+    "python-dotenv==1.0.1",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +38,10 @@ dev = [
     "pytest-cov==6.0.0",
     "ruff==0.8.6",
     "httpx==0.28.1",
+]
+ocr = [
+    "pytesseract>=0.3.10",
+    "pdf2image>=1.17.0",
 ]
 
 [tool.ruff]

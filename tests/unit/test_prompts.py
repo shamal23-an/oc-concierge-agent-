@@ -74,9 +74,7 @@ class TestBuildScopeInstructions:
         assert "Cape Town" in result
 
     def test_cross_property_scope(self):
-        result = build_scope_instructions(
-            "cross_property", property_names="La Fontaine, Avondrood"
-        )
+        result = build_scope_instructions("cross_property", property_names="La Fontaine, Avondrood")
         assert "La Fontaine, Avondrood" in result
 
     def test_group_scope(self):

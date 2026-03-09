@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import datetime as dt
+
 import httpx
 import structlog
 
@@ -45,6 +47,8 @@ _QUERY_TYPE_KEYWORDS: dict[str, list[str]] = {
 }
 
 _DOC_TYPE_BOOST = 0.08
+_TEMPORAL_BOOST = 0.1
+_TEMPORAL_PENALTY = -0.15
 
 
 def _detect_query_doc_types(message: str) -> set[str]:
@@ -57,6 +61,56 @@ def _detect_query_doc_types(message: str) -> set[str]:
     return matched
 
 
+def _temporal_score_adjust(metadata: dict) -> float:
+    """Boost current-validity docs, penalize expired ones."""
+    valid_from = metadata.get("valid_from")
+    valid_to = metadata.get("valid_to")
+    if not valid_from and not valid_to:
+        return 0.0
+
+    now_str = dt.datetime.now(tz=dt.UTC).strftime("%Y-%m")
+    if valid_to and now_str > valid_to:
+        return _TEMPORAL_PENALTY  # Expired
+    if valid_from and valid_to and valid_from <= now_str <= valid_to:
+        return _TEMPORAL_BOOST  # Currently valid
+    if valid_from and now_str >= valid_from:
+        return _TEMPORAL_BOOST  # Started, no end date or not expired
+    return 0.0
+
+
+def _enforce_diversity(
+    chunks: list[tuple[float, RetrievedChunk]],
+    max_per_source: int,
+) -> list[tuple[float, RetrievedChunk]]:
+    """Limit max chunks from same source_file to prevent context flooding."""
+    source_counts: dict[str, int] = {}
+    result: list[tuple[float, RetrievedChunk]] = []
+    for score, chunk in chunks:
+        source = chunk.get("source_file", "")
+        count = source_counts.get(source, 0)
+        if count >= max_per_source:
+            continue
+        source_counts[source] = count + 1
+        result.append((score, chunk))
+    return result
+
+
+def _apply_score_gap(
+    chunks: list[tuple[float, RetrievedChunk]],
+    gap_threshold: float,
+) -> list[tuple[float, RetrievedChunk]]:
+    """Truncate results at a large score gap (indicates irrelevant tail)."""
+    if len(chunks) <= 1:
+        return chunks
+    result = [chunks[0]]
+    for i in range(1, len(chunks)):
+        gap = chunks[i - 1][0] - chunks[i][0]
+        if gap > gap_threshold + 1e-9:  # epsilon for float comparison
+            break
+        result.append(chunks[i])
+    return result
+
+
 def rank_chunks(
     chunks: list[RetrievedChunk],
     *,
@@ -65,12 +119,12 @@ def rank_chunks(
 ) -> list[RetrievedChunk]:
     """Rank and deduplicate retrieved chunks (local fallback ranker).
 
-    Scoring: base score + property match bonus + document_type bonus.
-    Deduplicates near-identical chunks.
+    Scoring: base score + property match + document_type + temporal + diversity.
     """
     if not chunks:
         return []
 
+    settings = get_settings()
     relevant_doc_types = _detect_query_doc_types(query) if query else set()
 
     scored: list[tuple[float, RetrievedChunk]] = []
@@ -94,10 +148,20 @@ def rank_chunks(
         if chunk_doc_type and chunk_doc_type in relevant_doc_types:
             score += _DOC_TYPE_BOOST
 
+        # Temporal boost/penalty
+        score += _temporal_score_adjust(chunk.get("metadata", {}))
+
         scored.append((score, chunk))
 
     # Sort by score descending
     scored.sort(key=lambda x: x[0], reverse=True)
+
+    # Enforce source diversity
+    scored = _enforce_diversity(scored, max_per_source=settings.max_chunks_per_source)
+
+    # Apply score gap detection
+    scored = _apply_score_gap(scored, gap_threshold=settings.score_gap_threshold)
+
     return [chunk for _, chunk in scored]
 
 

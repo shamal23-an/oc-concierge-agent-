@@ -35,7 +35,9 @@ from src.config.constants import BOOKING_PATTERNS, GREETING_PATTERNS, OUT_OF_SCO
 from src.config.settings import get_settings
 from src.domain.properties import PROPERTY_REGISTRY, PropertyID
 from src.domain.schemas import AgentState, QueryScope
+from src.observability.metrics import get_metrics
 from src.retrieval.embedder import embed_query_hybrid
+from src.retrieval.query_rewriter import expand_query
 from src.retrieval.ranker import rerank_chunks
 from src.retrieval.strategies import layered_retrieve
 
@@ -231,7 +233,15 @@ async def retrieve_node(
             return state
 
     # ── Normal retrieval (async) ─────────────────────────────────────── #
-    dense_vector, sparse_vector = await embed_query_hybrid(message)
+    # Expand query with synonyms for better embedding recall
+    property_name = None
+    if active_pid:
+        _info = PROPERTY_REGISTRY.get(PropertyID(active_pid))
+        if _info:
+            property_name = _info.name
+    expanded = expand_query(message, property_name=property_name)
+
+    dense_vector, sparse_vector = await embed_query_hybrid(expanded)
     vector = list(dense_vector)
 
     property_id = None
@@ -266,7 +276,16 @@ async def retrieve_node(
     )
 
     # Re-rank with Jina (falls back to local ranker if unconfigured)
+    import time as _time
+
+    _t0 = _time.perf_counter()
     ranked = await rerank_chunks(message, chunks)
+    _rerank_ms = (_time.perf_counter() - _t0) * 1000
+
+    metrics = get_metrics()
+    metrics.rerank_latency.record(_rerank_ms)
+    if ranked:
+        metrics.record_retrieval_result(ranked[0]["score"], len(ranked))
 
     state["chunks"] = ranked
 
@@ -387,6 +406,10 @@ async def generate_node(state: AgentState) -> AgentState:
 
     sources = list({c["source_file"] for c in chunks if c.get("source_file")})
     state["sources"] = sources
+
+    # Record metrics
+    metrics = get_metrics()
+    metrics.record_query(scope)
 
     # ── Response cache store (async) ─────────────────────────────────── #
     redis_client = state.get("_redis")  # type: ignore[typeddict-item]

@@ -63,6 +63,46 @@ class TestTableToMarkdown:
         assert lines[2].count("|") == 4  # |col|col|col|
 
 
+class TestGenericHeaderDetection:
+    def test_col1_col2_is_generic(self):
+        assert PdfParser._is_generic_header(["Col1", "Col2", "Col3"]) is True
+
+    def test_column_1_is_generic(self):
+        assert PdfParser._is_generic_header(["Column 1", "Column 2"]) is True
+
+    def test_empty_header_is_generic(self):
+        assert PdfParser._is_generic_header(["", "", ""]) is True
+
+    def test_real_header_is_not_generic(self):
+        assert PdfParser._is_generic_header(["Room Type", "Low Season", "High Season"]) is False
+
+    def test_mixed_generic_and_real(self):
+        # If at least one cell is non-generic, it's a real header
+        assert PdfParser._is_generic_header(["Col1", "Rate"]) is False
+
+    def test_generic_header_promotes_first_data_row(self):
+        table = [
+            ["Col1", "Col2", "Col3"],
+            ["Room Type", "Low Season", "High Season"],
+            ["Standard", "R500", "R800"],
+        ]
+        md = PdfParser._table_to_markdown(table)
+        assert md is not None
+        assert "| Room Type | Low Season | High Season |" in md
+        assert "| Standard | R500 | R800 |" in md
+        assert "Col1" not in md
+
+    def test_real_header_not_promoted(self):
+        table = [
+            ["Room Type", "Rate"],
+            ["Standard", "R500"],
+        ]
+        md = PdfParser._table_to_markdown(table)
+        assert md is not None
+        assert "| Room Type | Rate |" in md
+        assert "| Standard | R500 |" in md
+
+
 class TestMergeTables:
     def test_appends_tables_with_markers(self):
         md_text = "# Title\nSome content"

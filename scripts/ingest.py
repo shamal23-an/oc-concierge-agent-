@@ -28,13 +28,14 @@ from src.ingestion.parsers.msg import MsgParser
 from src.ingestion.parsers.pdf import PdfParser
 from src.ingestion.parsers.xlsx import XlsxParser
 from src.ingestion.property_tagger import classify_document_type, tag_property_ids
+from src.ingestion.source_config import DEFAULT_SOURCES, SourceConfig, extract_validity_dates
 
 logger = structlog.get_logger()
 
 PARSERS = [PdfParser(), DocxParser(), MsgParser(), XlsxParser()]
 
-# Default KB roots (relative to project root)
-DEFAULT_KB_ROOTS = [
+# Legacy KB roots (used when --kb-path is passed)
+LEGACY_KB_ROOTS = [
     Path("D:/Work/Projects/Oyster-Collection/knowldge_base"),
     Path("D:/Work/Projects/Oyster-Collection/Knowledge Base"),
 ]
@@ -58,13 +59,19 @@ def parse_file(path: Path) -> str | None:
 
 
 def run_ingestion(
-    kb_roots: list[Path],
+    kb_roots: list[Path] | None = None,
     *,
+    sources: list[SourceConfig] | None = None,
     recreate: bool = False,
     dry_run: bool = False,
     batch_size: int = 100,
 ) -> dict:
-    """Run the full ingestion pipeline."""
+    """Run the full ingestion pipeline.
+
+    Can be called with either:
+    - sources: list of SourceConfig (preferred, supports include/exclude globs)
+    - kb_roots: list of Path (legacy mode, discovers all supported files)
+    """
     from src.ingestion.embedder import embed_texts
     from src.ingestion.store import ensure_collection, get_collection_stats, upsert_chunks
 
@@ -90,78 +97,105 @@ def run_ingestion(
 
     dedup = DeduplicationTracker()
 
-    # Collect all chunks across all KB roots
+    # Build file list from sources or kb_roots
+    file_source_pairs: list[tuple[Path, Path]] = []  # (file_path, kb_root)
+
+    if sources:
+        for source in sources:
+            files = source.discover_files()
+            stats["files_discovered"] += len(files)
+            logger.info(
+                "discovered_files",
+                source=str(source.root),
+                count=len(files),
+                has_filters=bool(source.include_patterns),
+            )
+            for f in files:
+                file_source_pairs.append((f, source.root))
+    elif kb_roots:
+        for kb_root in kb_roots:
+            if not kb_root.exists():
+                logger.warning("kb_root_not_found", path=str(kb_root))
+                continue
+            files = discover_files(kb_root)
+            stats["files_discovered"] += len(files)
+            logger.info("discovered_files", kb_root=str(kb_root), count=len(files))
+            for f in files:
+                file_source_pairs.append((f, kb_root))
+
+    # Collect all chunks
     all_chunks_data: list[dict] = []
 
-    for kb_root in kb_roots:
-        if not kb_root.exists():
-            logger.warning("kb_root_not_found", path=str(kb_root))
+    for file_path, kb_root in file_source_pairs:
+        # Parse
+        text = parse_file(file_path)
+        if not text:
             continue
 
-        files = discover_files(kb_root)
-        stats["files_discovered"] += len(files)
-        logger.info("discovered_files", kb_root=str(kb_root), count=len(files))
+        rel_path_str = str(file_path.relative_to(kb_root))
 
-        for file_path in files:
-            # Parse
-            text = parse_file(file_path)
-            if not text:
-                continue
+        # Dedup (with source tracking)
+        if dedup.is_duplicate(text, source_path=rel_path_str):
+            kept = dedup.get_kept_source(text)
+            stats["files_skipped_duplicate"] += 1
+            logger.debug(
+                "skipping_duplicate",
+                file=rel_path_str,
+                kept_source=kept,
+            )
+            continue
 
-            # Dedup
-            if dedup.is_duplicate(text):
-                stats["files_skipped_duplicate"] += 1
-                logger.debug("skipping_duplicate", file=str(file_path))
-                continue
+        stats["files_parsed"] += 1
 
-            stats["files_parsed"] += 1
+        # Tag properties
+        property_ids = tag_property_ids(file_path, kb_root)
+        doc_type = classify_document_type(file_path.name)
 
-            # Tag properties
-            property_ids = tag_property_ids(file_path, kb_root)
-            doc_type = classify_document_type(file_path.name)
+        # Determine region from first property
+        from src.domain.properties import PROPERTY_REGISTRY
 
-            # Determine region from first property
-            from src.domain.properties import PROPERTY_REGISTRY
+        region = "shared"
+        for pid in property_ids:
+            info = PROPERTY_REGISTRY.get(pid)
+            if info:
+                region = str(info.region)
+                break
 
-            region = "shared"
-            for pid in property_ids:
-                info = PROPERTY_REGISTRY.get(pid)
-                if info:
-                    region = str(info.region)
-                    break
+        # Track distribution
+        for pid in property_ids:
+            pid_str = str(pid)
+            stats["property_distribution"][pid_str] = (
+                stats["property_distribution"].get(pid_str, 0) + 1
+            )
 
-            # Track distribution
-            for pid in property_ids:
-                pid_str = str(pid)
-                stats["property_distribution"][pid_str] = (
-                    stats["property_distribution"].get(pid_str, 0) + 1
-                )
+        # Extract validity dates for rate cards
+        validity = extract_validity_dates(file_path.name)
 
-            rel_path = str(file_path.relative_to(kb_root))
+        # Chunk
+        doc_hash = content_hash(text)
+        metadata = {
+            "source_file": file_path.name,
+            "source_path": rel_path_str,
+            "property_ids": [str(p) for p in property_ids],
+            "region": region,
+            "document_type": doc_type,
+            "content_hash": doc_hash,
+        }
+        if validity:
+            metadata.update(validity)
 
-            # Chunk
-            doc_hash = content_hash(text)
-            metadata = {
-                "source_file": file_path.name,
-                "source_path": rel_path,
-                "property_ids": [str(p) for p in property_ids],
-                "region": region,
-                "document_type": doc_type,
-                "content_hash": doc_hash,
-            }
+        chunks = chunk_text(text, metadata=metadata, document_type=doc_type)
+        stats["total_chunks"] += len(chunks)
 
-            chunks = chunk_text(text, metadata=metadata)
-            stats["total_chunks"] += len(chunks)
-
-            for chunk in chunks:
-                point_id = deterministic_point_id(doc_hash, chunk.chunk_index)
-                all_chunks_data.append(
-                    {
-                        "point_id": point_id,
-                        "text": chunk.text,
-                        "metadata": chunk.metadata,
-                    }
-                )
+        for chunk in chunks:
+            point_id = deterministic_point_id(doc_hash, chunk.chunk_index)
+            all_chunks_data.append(
+                {
+                    "point_id": point_id,
+                    "text": chunk.text,
+                    "metadata": chunk.metadata,
+                }
+            )
 
     if dry_run:
         logger.info("dry_run_complete", stats=stats)
@@ -352,16 +386,25 @@ def main() -> None:
 
     setup_logging(json_output=False)
 
-    kb_roots = args.kb_path if args.kb_path else DEFAULT_KB_ROOTS
-    kb_roots = [Path(p) for p in kb_roots]
-
     start = time.perf_counter()
-    run_ingestion(
-        kb_roots,
-        recreate=args.recreate,
-        dry_run=args.dry_run,
-        batch_size=args.batch_size,
-    )
+
+    if args.kb_path:
+        # Legacy mode: raw paths
+        kb_roots = [Path(p) for p in args.kb_path]
+        run_ingestion(
+            kb_roots=kb_roots,
+            recreate=args.recreate,
+            dry_run=args.dry_run,
+            batch_size=args.batch_size,
+        )
+    else:
+        # Default: use SourceConfig with include/exclude filtering
+        run_ingestion(
+            sources=DEFAULT_SOURCES,
+            recreate=args.recreate,
+            dry_run=args.dry_run,
+            batch_size=args.batch_size,
+        )
 
     if args.verify and not args.dry_run:
         settings = get_settings()
