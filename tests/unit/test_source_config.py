@@ -16,7 +16,7 @@ class TestSourceConfigDiscovery:
         files = source.discover_files()
         names = {f.name for f in files}
         assert "doc.pdf" in names
-        assert "sheet.xlsx" in names
+        assert "sheet.xlsx" not in names  # PDF-only
         assert "image.jpg" not in names
 
     def test_include_patterns_filter(self, tmp_path):

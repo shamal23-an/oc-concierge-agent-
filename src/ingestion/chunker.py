@@ -10,11 +10,27 @@ from src.config.settings import get_settings
 
 logger = structlog.get_logger()
 
+# Minimum meaningful chunk length (chars). Chunks shorter than this are dropped.
+_MIN_CHUNK_LENGTH = 50
+
 # Patterns for section detection
 _HEADING_RE = re.compile(r"^(#{1,4})\s+(.+)$", re.MULTILINE)
 _PAGE_MARKER_RE = re.compile(r"<!--\s*PAGE:\s*(\d+)\s*-->")
 _TABLE_MARKER_RE = re.compile(r"<!--\s*TABLE:\s*page\s*(\d+)\s*-->")
 _MD_TABLE_ROW_RE = re.compile(r"^\|.*\|$")
+
+# Boilerplate patterns to strip from chunks
+_BOILERPLATE_PATTERNS = [
+    # Email signatures / footers
+    re.compile(r"^Kind Regards.*$", re.MULTILINE | re.IGNORECASE),
+    re.compile(r"^FRANSCHHOEK\s*\|.*$", re.MULTILINE),
+    re.compile(r"^\d{4}(?:,\s*\d{4})*\s+Lilizella.*$", re.MULTILINE),
+    re.compile(r"<(?:mailto|tel|http)[^>]*>", re.IGNORECASE),
+    # Horizontal rules (standalone)
+    re.compile(r"^\s*-{3,}\s*$", re.MULTILINE),
+    # Multiple consecutive blank lines → single blank line
+    re.compile(r"\n{3,}"),
+]
 
 
 @dataclass
@@ -86,13 +102,39 @@ def chunk_text(
             )
             chunk_idx += 1
 
+    # Post-process: clean boilerplate and drop tiny chunks
+    cleaned_chunks: list[Chunk] = []
+    for chunk in chunks:
+        cleaned_text = _clean_boilerplate(chunk.text)
+        if len(cleaned_text.strip()) < _MIN_CHUNK_LENGTH:
+            logger.debug("chunk_dropped_too_short", length=len(cleaned_text.strip()))
+            continue
+        chunk.text = cleaned_text
+        cleaned_chunks.append(chunk)
+
+    # Re-index chunks after filtering
+    for i, chunk in enumerate(cleaned_chunks):
+        chunk.chunk_index = i
+        chunk.metadata["chunk_index"] = i
+
     logger.debug(
         "chunked_text",
-        num_chunks=len(chunks),
+        num_chunks=len(cleaned_chunks),
         num_sections=len(sections),
         chunk_size=size,
+        dropped=len(chunks) - len(cleaned_chunks),
     )
-    return chunks
+    return cleaned_chunks
+
+
+def _clean_boilerplate(text: str) -> str:
+    """Remove boilerplate patterns (email sigs, URLs, excessive separators)."""
+    cleaned = text
+    for pattern in _BOILERPLATE_PATTERNS:
+        cleaned = pattern.sub("\n" if pattern.pattern.startswith("\\n") else "", cleaned)
+    # Collapse multiple blank lines
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
 
 
 def _split_into_sections(text: str) -> list[dict]:

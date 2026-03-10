@@ -21,7 +21,7 @@ SESSION_LOCK_POLL_INTERVAL = 0.1  # seconds — polling interval while waiting
 
 # Ingestion
 BATCH_EMBEDDING_SIZE = 100
-SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".doc", ".msg", ".xlsx", ".xls"}
+SUPPORTED_EXTENSIONS = {".pdf"}
 
 # Greeting keywords (fast-path, skip LLM)
 GREETING_PATTERNS = {
