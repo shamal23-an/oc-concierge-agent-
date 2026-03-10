@@ -242,9 +242,7 @@ EVALUATION_SET = [
     {
         "id": "GS10",
         "category": "general_services",
-        "question": (
-            "Is a fold-out mattress available for children, and what is the charge?"
-        ),
+        "question": ("Is a fold-out mattress available for children, and what is the charge?"),
         "expected": "Children 4+ in Luxury Suite on mattress at extra charge.",
         "expected_contains": ["children"],
         "answerable": True,
@@ -391,8 +389,7 @@ EVALUATION_SET = [
         "id": "FT04",
         "category": "franschhoek_tours",
         "question": (
-            "What is the nearest golf course to Franschhoek, "
-            "and will they allow visitors?"
+            "What is the nearest golf course to Franschhoek, " "and will they allow visitors?"
         ),
         "expected": "Pearl Valley / Boschenmeer Golf Estate.",
         "expected_contains": ["golf"],
@@ -471,9 +468,7 @@ EVALUATION_SET = [
     {
         "id": "FB04",
         "category": "franschhoek_booking",
-        "question": (
-            "Can we leave our car parked at La Fontaine and check-in later in the day?"
-        ),
+        "question": ("Can we leave our car parked at La Fontaine and check-in later in the day?"),
         "expected": "Not documented. Contact La Fontaine for parking queries.",
         "expected_contains": ["contact"],
         "answerable": False,
@@ -527,9 +522,7 @@ EVALUATION_SET = [
     {
         "id": "CT04",
         "category": "cape_town_tours",
-        "question": (
-            "Does the Cape Peninsula tour include Chapman's Peak Drive?"
-        ),
+        "question": ("Does the Cape Peninsula tour include Chapman's Peak Drive?"),
         "expected": "Tour itinerary details from BHL Tours & Transfers doc.",
         "expected_contains": ["tour"],
         "answerable": True,
@@ -680,9 +673,7 @@ EVALUATION_SET = [
     {
         "id": "CFA04",
         "category": "camp_figtree_activities",
-        "question": (
-            "How do I submit dietary notes or special requirements at Camp Figtree?"
-        ),
+        "question": ("How do I submit dietary notes or special requirements at Camp Figtree?"),
         "expected": "Not documented in KB. Contact Camp Figtree for dietary needs.",
         "expected_contains": ["contact"],
         "answerable": False,
@@ -691,8 +682,7 @@ EVALUATION_SET = [
         "id": "CFA05",
         "category": "camp_figtree_activities",
         "question": (
-            "Can you book the Giraffe walk for a specific date and time "
-            "at Camp Figtree?"
+            "Can you book the Giraffe walk for a specific date and time " "at Camp Figtree?"
         ),
         "expected": "Activities available. Contact Camp Figtree for specific bookings.",
         "expected_contains": ["giraffe"],
@@ -923,8 +913,7 @@ EVALUATION_SET = [
         "id": "BK03",
         "category": "booking_intent",
         "question": (
-            "Can you check availability at La Fontaine for 15-18 March "
-            "for 2 adults and 1 child?"
+            "Can you check availability at La Fontaine for 15-18 March " "for 2 adults and 1 child?"
         ),
         "expected": "Acknowledge details, provide rate info, offer contact.",
         "expected_contains": ["la fontaine"],
@@ -1084,9 +1073,7 @@ def evaluate_answer(item: dict, response: str) -> str:
     has_escalation = any(x in lower for x in ["email", "phone", "@", "+27", "contact"])
 
     # Check expected_contains
-    contains_pass = all(
-        term.lower() in lower for term in item.get("expected_contains", [])
-    )
+    contains_pass = all(term.lower() in lower for term in item.get("expected_contains", []))
 
     if is_denial and not has_escalation:
         return "DENIED"
@@ -1216,9 +1203,7 @@ def main():
     for cat, items in categories.items():
         cat_total = len(items)
         cat_pass = sum(1 for r in items if r["verdict"] == "PASS")
-        bar = "#" * int(cat_pass / cat_total * 20) + "." * (
-            20 - int(cat_pass / cat_total * 20)
-        )
+        bar = "#" * int(cat_pass / cat_total * 20) + "." * (20 - int(cat_pass / cat_total * 20))
         print(
             f"    {cat:30s} {cat_pass:2d}/{cat_total:2d} "
             f"[{bar}] {cat_pass / cat_total * 100:.0f}%"
@@ -1226,9 +1211,7 @@ def main():
 
     # -- Regressions --
     regressions = [
-        r
-        for r in results
-        if r["verdict"] in ("DENIED", "FAIL") and r.get("answerable", True)
+        r for r in results if r["verdict"] in ("DENIED", "FAIL") and r.get("answerable", True)
     ]
     if regressions:
         print("\n  RETRIEVAL FAILURES (answerable but denied/failed):")
@@ -1247,9 +1230,7 @@ def main():
                 "partial": partial,
                 "denied": denied,
                 "failed": failed,
-                "accuracy_pct": round(
-                    answerable_passed / answerable_total * 100, 1
-                )
+                "accuracy_pct": round(answerable_passed / answerable_total * 100, 1)
                 if answerable_total
                 else 0,
                 "results": results,

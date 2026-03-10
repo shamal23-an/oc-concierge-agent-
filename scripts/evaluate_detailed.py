@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 import time
 from pathlib import Path
 
@@ -449,14 +448,10 @@ def evaluate_answer(item: dict, response: str) -> str:
         "no information",
     ]
     is_denial = any(p in lower for p in denial_phrases)
-    has_escalation = any(
-        x in lower for x in ["email", "phone", "@", "+27", "contact"]
-    )
+    has_escalation = any(x in lower for x in ["email", "phone", "@", "+27", "contact"])
 
     # Check expected_contains
-    contains_pass = all(
-        term.lower() in lower for term in item.get("expected_contains", [])
-    )
+    contains_pass = all(term.lower() in lower for term in item.get("expected_contains", []))
 
     if is_denial and not has_escalation:
         return "DENIED"
@@ -505,7 +500,9 @@ def main():
 
         icon = {"PASS": "+", "FAIL": "X", "PARTIAL": "~", "DENIED": "-"}[verdict]
         answerable_tag = "" if answerable else " [NOT IN KB]"
-        print(f"  [{icon}] {item['id']:5s} ({latency:4.1f}s) {item['question'][:60]}{answerable_tag}")
+        print(
+            f"  [{icon}] {item['id']:5s} ({latency:4.1f}s) {item['question'][:60]}{answerable_tag}"
+        )
 
     # ── Detailed Report ──
     print("\n" + "=" * 100)
@@ -530,7 +527,7 @@ def main():
             print(f"  EXPECTED: {r['expected'][:120]}")
             print(f"  ACTUAL:   {r['actual'][:120]}")
             if r["verdict"] in ("DENIED", "FAIL") and r["answerable"]:
-                print(f"  >>> ISSUE: Answer IS in KB but not retrieved!")
+                print("  >>> ISSUE: Answer IS in KB but not retrieved!")
 
     # ── Summary ──
     print("\n" + "=" * 100)
@@ -569,32 +566,28 @@ def main():
         f" ({answerable_passed/answerable_total*100:.0f}%)"
     )
     print(
-        f"  With escalation:       {passed+partial}/{total}"
-        f" ({(passed+partial)/total*100:.0f}%)"
+        f"  With escalation:       {passed+partial}/{total}" f" ({(passed+partial)/total*100:.0f}%)"
     )
     print(
         f"  Not-in-KB handled:     {unanswerable_correct}/{unanswerable}"
-        f" ({unanswerable_correct/unanswerable*100:.0f}%)" if unanswerable else ""
+        f" ({unanswerable_correct/unanswerable*100:.0f}%)"
+        if unanswerable
+        else ""
     )
 
-    print(f"\n  Per Category:")
+    print("\n  Per Category:")
     for cat, items in categories.items():
         cat_total = len(items)
         cat_pass = sum(1 for r in items if r["verdict"] == "PASS")
-        cat_answerable = sum(1 for r in items if r.get("answerable", True))
-        bar = "#" * int(cat_pass / cat_total * 20) + "." * (
-            20 - int(cat_pass / cat_total * 20)
-        )
+        bar = "#" * int(cat_pass / cat_total * 20) + "." * (20 - int(cat_pass / cat_total * 20))
         print(f"    {cat:25s} {cat_pass:2d}/{cat_total:2d} [{bar}] {cat_pass/cat_total*100:.0f}%")
 
     # ── Regressions (answerable but not passing) ──
     regressions = [
-        r
-        for r in results
-        if r["verdict"] in ("DENIED", "FAIL") and r.get("answerable", True)
+        r for r in results if r["verdict"] in ("DENIED", "FAIL") and r.get("answerable", True)
     ]
     if regressions:
-        print(f"\n  RETRIEVAL FAILURES (answerable but denied/failed):")
+        print("\n  RETRIEVAL FAILURES (answerable but denied/failed):")
         for r in regressions:
             print(f"    [{r['verdict']:7s}] {r['id']}: {r['question'][:70]}")
 
