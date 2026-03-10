@@ -23,16 +23,13 @@ from src.ingestion.deduplicator import (
     content_hash,
     deterministic_point_id,
 )
-from src.ingestion.parsers.docx import DocxParser
-from src.ingestion.parsers.msg import MsgParser
 from src.ingestion.parsers.pdf import PdfParser
-from src.ingestion.parsers.xlsx import XlsxParser
 from src.ingestion.property_tagger import classify_document_type, tag_property_ids
 from src.ingestion.source_config import DEFAULT_SOURCES, SourceConfig, extract_validity_dates
 
 logger = structlog.get_logger()
 
-PARSERS = [PdfParser(), DocxParser(), MsgParser(), XlsxParser()]
+PARSERS = [PdfParser()]
 
 # Legacy KB roots (used when --kb-path is passed)
 LEGACY_KB_ROOTS = [

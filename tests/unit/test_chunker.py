@@ -116,7 +116,10 @@ class TestChunkText:
     def test_basic_chunking(self, mock_settings):
         mock_settings.return_value.chunk_size = 512
         mock_settings.return_value.chunk_overlap = 64
-        text = "## Menu\nPasta, Steak, Fish"
+        text = (
+            "## Menu\nOur restaurant offers Pasta, Steak, Fish, "
+            "Salad and Desserts with seasonal ingredients"
+        )
         chunks = chunk_text(text)
         assert len(chunks) >= 1
         assert isinstance(chunks[0], Chunk)
@@ -127,7 +130,10 @@ class TestChunkText:
     def test_metadata_populated(self, mock_settings):
         mock_settings.return_value.chunk_size = 512
         mock_settings.return_value.chunk_overlap = 64
-        text = "<!-- PAGE: 2 -->\n## Rates\nR500 per night"
+        text = (
+            "<!-- PAGE: 2 -->\n## Rates\nStandard Room R500 "
+            "per night including complimentary breakfast"
+        )
         chunks = chunk_text(text, metadata={"source_file": "rates.pdf"})
         assert chunks[0].page_number == 2
         assert chunks[0].section_title == "Rates"
@@ -153,7 +159,12 @@ class TestChunkText:
     def test_chunk_indices_sequential(self, mock_settings):
         mock_settings.return_value.chunk_size = 512
         mock_settings.return_value.chunk_overlap = 64
-        text = "## Section A\nContent A\n## Section B\nContent B"
+        text = (
+            "## Section A\nThis section has enough content "
+            "for the minimum length filter to pass\n"
+            "## Section B\nThis second section also has "
+            "enough content to pass the minimum length"
+        )
         chunks = chunk_text(text)
         for i, chunk in enumerate(chunks):
             assert chunk.chunk_index == i
@@ -169,7 +180,9 @@ class TestChunkText:
     def test_custom_chunk_size(self, mock_settings):
         mock_settings.return_value.chunk_size = 1024
         mock_settings.return_value.chunk_overlap = 128
-        text = "## Title\nShort content"
+        text = (
+            "## Title\nThis is a longer piece of content " "that exceeds the minimum chunk length"
+        )
         chunks = chunk_text(text, chunk_size=256, chunk_overlap=32)
         assert len(chunks) >= 1
 
@@ -224,7 +237,9 @@ class TestRateCardChunking:
     def test_non_rate_doc_uses_normal_chunking(self, mock_settings):
         mock_settings.return_value.chunk_size = 512
         mock_settings.return_value.chunk_overlap = 64
-        text = "## About\nThis is a general document."
+        text = (
+            "## About\nThis is a general document about our " "boutique hotel with rooms and dining"
+        )
 
         chunks = chunk_text(text, document_type="general")
         assert len(chunks) >= 1
