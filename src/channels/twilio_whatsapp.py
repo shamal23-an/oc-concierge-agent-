@@ -13,6 +13,8 @@ We reply via the Twilio client (client.messages.create).
 
 from __future__ import annotations
 
+import asyncio
+import re
 from typing import TYPE_CHECKING
 
 import structlog
@@ -32,7 +34,7 @@ logger = structlog.get_logger()
 
 router = APIRouter()
 
-_WA_MAX_LENGTH = 1600  # Twilio WhatsApp limit per message
+_WA_MAX_LENGTH = 1500  # Conservative limit per message part
 
 # Module-level Twilio client (lazy init)
 _twilio_client: TwilioClient | None = None
@@ -48,6 +50,79 @@ def _get_twilio_client() -> TwilioClient:
             settings.twilio_auth_token,
         )
     return _twilio_client
+
+
+def _format_for_whatsapp(text: str) -> str:
+    """Convert markdown formatting to WhatsApp-compatible formatting.
+
+    WhatsApp supports: *bold*, _italic_, ~strikethrough~, ```monospace```
+    It does NOT support: ### headers, **bold**, [links](url), ---, etc.
+    """
+    # Remove [Source: ...] citations (compact for WhatsApp)
+    text = re.sub(r"\[Source:\s*[^\]]+\]", "", text)
+
+    # ### Header or ## Header or # Header -> *Header* (WhatsApp bold)
+    text = re.sub(r"^#{1,4}\s+(.+)$", r"*\1*", text, flags=re.MULTILINE)
+
+    # **bold** -> *bold* (WhatsApp bold)
+    text = re.sub(r"\*\*(.+?)\*\*", r"*\1*", text)
+
+    # --- or ___ horizontal rules -> empty line
+    text = re.sub(r"^[-_]{3,}\s*$", "", text, flags=re.MULTILINE)
+
+    # - item -> bullet item (bullet points)
+    text = re.sub(r"^(\s*)- ", "\\1\u2022 ", text, flags=re.MULTILINE)
+
+    # Collapse 3+ newlines to 2
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    return text.strip()
+
+
+def _split_messages(text: str, max_len: int = _WA_MAX_LENGTH) -> list[str]:
+    """Split a long message into parts that fit WhatsApp's limit.
+
+    Splits on paragraph boundaries (double newlines). If a single paragraph
+    exceeds max_len, splits on sentence boundaries.
+    """
+    if len(text) <= max_len:
+        return [text]
+
+    paragraphs = text.split("\n\n")
+    parts: list[str] = []
+    current = ""
+
+    for para in paragraphs:
+        candidate = f"{current}\n\n{para}".strip() if current else para
+
+        if len(candidate) <= max_len:
+            current = candidate
+        else:
+            # Save current part if non-empty
+            if current:
+                parts.append(current.strip())
+
+            # Check if this paragraph alone exceeds limit
+            if len(para) > max_len:
+                # Split on sentences
+                sentences = re.split(r"(?<=[.!?])\s+", para)
+                current = ""
+                for sentence in sentences:
+                    candidate = f"{current} {sentence}".strip() if current else sentence
+                    if len(candidate) <= max_len:
+                        current = candidate
+                    else:
+                        if current:
+                            parts.append(current.strip())
+                        # If a single sentence exceeds limit, truncate
+                        current = sentence[:max_len]
+            else:
+                current = para
+
+    if current:
+        parts.append(current.strip())
+
+    return parts if parts else [text[:max_len]]
 
 
 @router.post("/twilio/webhook")
@@ -128,19 +203,23 @@ async def twilio_webhook(request: Request) -> Response:
             "our team directly for assistance."
         )
 
-    # Truncate to WhatsApp limit
-    if len(response_text) > _WA_MAX_LENGTH:
-        response_text = response_text[: _WA_MAX_LENGTH - 3] + "..."
+    # Format for WhatsApp and split into parts
+    formatted = _format_for_whatsapp(response_text)
+    message_parts = _split_messages(formatted)
 
-    # Send reply via Twilio API
+    # Send reply via Twilio API (multi-part if needed)
     try:
         client = _get_twilio_client()
-        client.messages.create(
-            body=response_text,
-            from_=settings.twilio_whatsapp_number,
-            to=sender,
-        )
-        log.info("twilio_reply_sent", length=len(response_text))
+        for i, part in enumerate(message_parts):
+            client.messages.create(
+                body=part,
+                from_=settings.twilio_whatsapp_number,
+                to=sender,
+            )
+            # Small delay between parts to maintain order
+            if i < len(message_parts) - 1:
+                await asyncio.sleep(0.15)
+        log.info("twilio_reply_sent", parts=len(message_parts), total_length=len(formatted))
     except Exception:
         log.exception("twilio_send_failed")
 

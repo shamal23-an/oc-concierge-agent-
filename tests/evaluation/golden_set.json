@@ -1,0 +1,636 @@
+{
+  "version": "1.0",
+  "description": "Golden test set for Oyster Collection RAG accuracy evaluation",
+  "questions": [
+    {
+      "id": "rates_001",
+      "question": "What is the rate per night for a room at La Fontaine?",
+      "property_id": "la_fontaine",
+      "category": "rates",
+      "expected_contains": ["per night"],
+      "expected_not_contains": ["Avondrood"],
+      "expected_scope": "property"
+    },
+    {
+      "id": "rates_002",
+      "question": "What are the rates at Avondrood?",
+      "property_id": "avondrood",
+      "category": "rates",
+      "expected_contains": [],
+      "expected_not_contains": ["La Fontaine"],
+      "expected_scope": "property"
+    },
+    {
+      "id": "rates_003",
+      "question": "How much does a room at The Pink Door cost?",
+      "property_id": "pink_door",
+      "category": "rates",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "rates_004",
+      "question": "What are the rates at POD Camps Bay?",
+      "property_id": "pod_camps_bay",
+      "category": "rates",
+      "expected_contains": [],
+      "expected_not_contains": ["Blackheath"],
+      "expected_scope": "property"
+    },
+    {
+      "id": "rates_005",
+      "question": "How much is it per night at Blackheath Lodge?",
+      "property_id": "blackheath_lodge",
+      "category": "rates",
+      "expected_contains": [],
+      "expected_not_contains": ["POD"],
+      "expected_scope": "property"
+    },
+    {
+      "id": "rates_006",
+      "question": "What is the rack rate at Camp Figtree?",
+      "property_id": "camp_figtree",
+      "category": "rates",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "rates_007",
+      "question": "What does it cost to stay at Oyster Box Beach House?",
+      "property_id": "oyster_box",
+      "category": "rates",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "rates_008",
+      "question": "What are the current rates at The Milner?",
+      "property_id": "the_milner",
+      "category": "rates",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "dining_001",
+      "question": "What is on the dinner menu at La Fontaine?",
+      "property_id": "la_fontaine",
+      "category": "dining",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "dining_002",
+      "question": "What breakfast options are available at POD Camps Bay?",
+      "property_id": "pod_camps_bay",
+      "category": "dining",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "dining_003",
+      "question": "Can you recommend a good restaurant in Franschhoek?",
+      "property_id": null,
+      "category": "dining",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "region"
+    },
+    {
+      "id": "dining_004",
+      "question": "What is the wine list like at La Fontaine?",
+      "property_id": "la_fontaine",
+      "category": "dining",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "activity_001",
+      "question": "What activities are available at Camp Figtree?",
+      "property_id": "camp_figtree",
+      "category": "activities",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "activity_002",
+      "question": "Can I go on a game drive from Camp Figtree?",
+      "property_id": "camp_figtree",
+      "category": "activities",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "activity_003",
+      "question": "What is there to do in Franschhoek?",
+      "property_id": null,
+      "category": "activities",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "region"
+    },
+    {
+      "id": "activity_004",
+      "question": "What activities can we do in Cape Town?",
+      "property_id": null,
+      "category": "activities",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "region"
+    },
+    {
+      "id": "spa_001",
+      "question": "What spa treatments are available at Avondrood?",
+      "property_id": "avondrood",
+      "category": "spa",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "spa_002",
+      "question": "Does La Fontaine have a spa?",
+      "property_id": "la_fontaine",
+      "category": "spa",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "directions_001",
+      "question": "How do I get to La Fontaine from Cape Town?",
+      "property_id": "la_fontaine",
+      "category": "directions",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "directions_002",
+      "question": "Where is Camp Figtree located?",
+      "property_id": "camp_figtree",
+      "category": "directions",
+      "expected_contains": ["Addo"],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "directions_003",
+      "question": "How far is Blackheath Lodge from the airport?",
+      "property_id": "blackheath_lodge",
+      "category": "directions",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "property_001",
+      "question": "Tell me about La Fontaine",
+      "property_id": "la_fontaine",
+      "category": "property_info",
+      "expected_contains": ["Franschhoek"],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "property_002",
+      "question": "What type of accommodation is The Pink Door?",
+      "property_id": "pink_door",
+      "category": "property_info",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "property_003",
+      "question": "Tell me about Burlington Bush Cottages",
+      "property_id": "burlington_bush",
+      "category": "property_info",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "property_004",
+      "question": "What are the Kenton Houses?",
+      "property_id": "kenton_houses",
+      "category": "property_info",
+      "expected_contains": ["Kenton"],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "property_005",
+      "question": "Tell me about 8A Guest House",
+      "property_id": "8a",
+      "category": "property_info",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "property_006",
+      "question": "What is Pleasance?",
+      "property_id": "pleasance",
+      "category": "property_info",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "compare_001",
+      "question": "What is the difference between POD Camps Bay and Blackheath Lodge?",
+      "property_id": null,
+      "category": "comparison",
+      "expected_contains": ["POD", "Blackheath"],
+      "expected_not_contains": [],
+      "expected_scope": "cross_property"
+    },
+    {
+      "id": "compare_002",
+      "question": "Which Franschhoek property is best for a romantic getaway?",
+      "property_id": null,
+      "category": "comparison",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "region"
+    },
+    {
+      "id": "booking_001",
+      "question": "I would like to book a room at La Fontaine for next weekend",
+      "property_id": "la_fontaine",
+      "category": "booking",
+      "expected_contains": ["book", "reserv"],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "booking_002",
+      "question": "Is there availability at Camp Figtree in December?",
+      "property_id": "camp_figtree",
+      "category": "booking",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "general_001",
+      "question": "What properties does The Oyster Collection have?",
+      "property_id": null,
+      "category": "general",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "general_002",
+      "question": "Do you have any properties near Addo Elephant Park?",
+      "property_id": null,
+      "category": "general",
+      "expected_contains": ["Camp Figtree"],
+      "expected_not_contains": [],
+      "expected_scope": "region"
+    },
+    {
+      "id": "general_003",
+      "question": "Which properties allow pets?",
+      "property_id": null,
+      "category": "general",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "general_004",
+      "question": "Do any of your properties have a swimming pool?",
+      "property_id": null,
+      "category": "general",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "edge_001",
+      "question": "What is the check-out time?",
+      "property_id": "la_fontaine",
+      "category": "edge_case",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "edge_002",
+      "question": "Do you serve halal food?",
+      "property_id": "la_fontaine",
+      "category": "edge_case",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "edge_003",
+      "question": "Is there WiFi at The Milner?",
+      "property_id": "the_milner",
+      "category": "edge_case",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "edge_004",
+      "question": "Can I bring my dog to Burlington Bush?",
+      "property_id": "burlington_bush",
+      "category": "edge_case",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "edge_005",
+      "question": "What is the weather like in Franschhoek in December?",
+      "property_id": null,
+      "category": "edge_case",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "region"
+    },
+    {
+      "id": "sparse_001",
+      "question": "Tell me about staying at Pleasance",
+      "property_id": "pleasance",
+      "category": "sparse_property",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "sparse_002",
+      "question": "What rooms are available at 8A Guest House?",
+      "property_id": "8a",
+      "category": "sparse_property",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "sparse_003",
+      "question": "Tell me about Oyster Box Beach House",
+      "property_id": "oyster_box",
+      "category": "sparse_property",
+      "expected_contains": ["Kenton"],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "sparse_004",
+      "question": "What is Burlington Bush like?",
+      "property_id": "burlington_bush",
+      "category": "sparse_property",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "brydon_001",
+      "question": "Can I reserve a specific room type at Avondrood?",
+      "property_id": "avondrood",
+      "category": "brydon",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "brydon_002",
+      "question": "What time is breakfast served at La Fontaine?",
+      "property_id": "la_fontaine",
+      "category": "brydon",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "brydon_003",
+      "question": "Are there any special festive season packages?",
+      "property_id": null,
+      "category": "brydon",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "brydon_004",
+      "question": "What wine farms are near Avondrood?",
+      "property_id": "avondrood",
+      "category": "brydon",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "brydon_005",
+      "question": "Is there an airport shuttle service from Cape Town airport to POD?",
+      "property_id": "pod_camps_bay",
+      "category": "brydon",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "brydon_006",
+      "question": "What game drives are offered at Camp Figtree?",
+      "property_id": "camp_figtree",
+      "category": "brydon",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "brydon_007",
+      "question": "Do you have family rooms or interconnecting rooms?",
+      "property_id": null,
+      "category": "brydon",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "brydon_008",
+      "question": "What is the cancellation policy?",
+      "property_id": null,
+      "category": "brydon",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "brydon_009",
+      "question": "Is parking available at Blackheath Lodge?",
+      "property_id": "blackheath_lodge",
+      "category": "brydon",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "brydon_010",
+      "question": "What is the best property for a honeymoon?",
+      "property_id": null,
+      "category": "brydon",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "discovery_001",
+      "question": "Where can I stay near Addo?",
+      "property_id": null,
+      "category": "discovery",
+      "expected_contains": ["Camp Figtree"],
+      "expected_not_contains": [],
+      "expected_scope": "region"
+    },
+    {
+      "id": "discovery_002",
+      "question": "Which properties are in the Western Cape?",
+      "property_id": null,
+      "category": "discovery",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "discovery_003",
+      "question": "Do you have properties in the Eastern Cape?",
+      "property_id": null,
+      "category": "discovery",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "out_of_scope_001",
+      "question": "Can you write Python code for me?",
+      "property_id": null,
+      "category": "out_of_scope",
+      "expected_contains": ["specifically designed"],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "out_of_scope_002",
+      "question": "What is the capital of France?",
+      "property_id": null,
+      "category": "out_of_scope",
+      "expected_contains": ["specifically designed"],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "greeting_001",
+      "question": "Hello",
+      "property_id": null,
+      "category": "greeting",
+      "expected_contains": ["Welcome", "Oyster Collection"],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "greeting_002",
+      "question": "Good morning",
+      "property_id": null,
+      "category": "greeting",
+      "expected_contains": ["Welcome"],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "rates_overview_001",
+      "question": "What is the cheapest property in The Oyster Collection?",
+      "property_id": null,
+      "category": "rates",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "group"
+    },
+    {
+      "id": "rates_009",
+      "question": "What are the high season rates at La Fontaine?",
+      "property_id": "la_fontaine",
+      "category": "rates",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "rates_010",
+      "question": "What are the festive season rates at Camp Figtree?",
+      "property_id": "camp_figtree",
+      "category": "rates",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "kenton_001",
+      "question": "What houses do you have in Kenton-on-Sea?",
+      "property_id": null,
+      "category": "discovery",
+      "expected_contains": ["Kenton"],
+      "expected_not_contains": [],
+      "expected_scope": "region"
+    },
+    {
+      "id": "kenton_002",
+      "question": "What is the difference between the Kenton houses?",
+      "property_id": "kenton_houses",
+      "category": "comparison",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "dining_005",
+      "question": "What lunch options does POD Camps Bay have?",
+      "property_id": "pod_camps_bay",
+      "category": "dining",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "dining_006",
+      "question": "What drinks are available at POD?",
+      "property_id": "pod_camps_bay",
+      "category": "dining",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "figtree_001",
+      "question": "What dining options are at Camp Figtree?",
+      "property_id": "camp_figtree",
+      "category": "dining",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    },
+    {
+      "id": "figtree_002",
+      "question": "How close is Camp Figtree to Addo Elephant Park?",
+      "property_id": "camp_figtree",
+      "category": "directions",
+      "expected_contains": [],
+      "expected_not_contains": [],
+      "expected_scope": "property"
+    }
+  ]
+}

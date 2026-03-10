@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 
 from src.api.dependencies import close_clients, init_clients
 from src.api.middleware import ApiKeyMiddleware, RequestLoggingMiddleware
-from src.api.routes import chat, health, properties
+from src.api.routes import chat, debug, health, metrics, properties
 from src.channels.twilio_whatsapp import router as twilio_router
 from src.channels.whatsapp import init_whatsapp
 from src.config.logging import setup_logging
@@ -58,6 +58,8 @@ def create_app() -> FastAPI:
     application.include_router(health.router, tags=["health"])
     application.include_router(properties.router, tags=["properties"])
     application.include_router(chat.router, tags=["chat"])
+    application.include_router(debug.router, tags=["debug"])
+    application.include_router(metrics.router, tags=["metrics"])
 
     # Twilio WhatsApp sandbox webhook
     application.include_router(twilio_router, tags=["twilio"])

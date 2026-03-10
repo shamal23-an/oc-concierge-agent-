@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import structlog
@@ -23,7 +24,14 @@ DOCUMENT_TYPE_PATTERNS: dict[str, list[str]] = {
     "recommendations": ["recommend", "suggestion", "wine farm"],
     "information_guide": ["information guide", "info guide", "guest info"],
     "festive": ["festive", "christmas", "nye", "new year"],
+    "brochure": ["brochure"],
+    "fact_sheet": ["fact sheet"],
 }
+
+# Trade-Portal numbered folder: "1. La Fontaine - Franschhoek"
+_NUMBERED_FOLDER_RE = re.compile(r"^\d+\.\s*(.+?)\s*[-–]\s*(.+)$")
+# Rate subfolder: "Rates - La Fontaine" or "Rates- Avondrood"
+_RATES_FOLDER_RE = re.compile(r"^Rates?\s*[-–]\s*(.+)$", re.IGNORECASE)
 
 
 def _build_filename_alias_index() -> list[tuple[str, PropertyID]]:
@@ -49,16 +57,19 @@ def tag_property_ids(file_path: Path, kb_root: Path) -> list[PropertyID]:
 
     Strategy (in priority order):
     1. Filename contains a property name/alias → that specific property
-    2. Parent folder matches a property's kb_folder → that property
-    3. Parent folder matches a region → ALL properties in that region
-    4. Fallback → shared
+    2. Trade-Portal numbered folder → "1. La Fontaine - Franschhoek" → property
+    3. Trade-Portal rate subfolder → "Rates - La Fontaine" → property
+    4. Parent folder matches a property's kb_folder → that property
+    5. Parent folder matches a region → ALL properties in that region
+    6. Fallback → shared
 
     This FIXES the prototype bug where all Franschhoek docs were tagged
     as la_fontaine because region folders matched the first property.
     """
     rel_path = file_path.relative_to(kb_root)
     filename_lower = file_path.stem.lower().replace("_", " ").replace("-", " ")
-    folder_parts = [p.lower() for p in rel_path.parts[:-1]]  # all parent dirs
+    folder_parts_raw = list(rel_path.parts[:-1])  # original case
+    folder_parts = [p.lower() for p in folder_parts_raw]
 
     # 1. Check filename for property name/alias
     for alias, pid in _FILENAME_ALIASES:
@@ -66,7 +77,35 @@ def tag_property_ids(file_path: Path, kb_root: Path) -> list[PropertyID]:
             logger.debug("tagged_by_filename", file=str(rel_path), property_id=pid)
             return [pid]
 
-    # 2. Check if any parent folder matches a property's kb_folder
+    # 2. Check Trade-Portal numbered folders: "1. La Fontaine - Franschhoek"
+    for folder in folder_parts_raw:
+        match = _NUMBERED_FOLDER_RE.match(folder)
+        if match:
+            property_name = match.group(1).strip()
+            pid = _match_property_name(property_name)
+            if pid:
+                logger.debug("tagged_by_numbered_folder", file=str(rel_path), property_id=pid)
+                return [pid]
+        # Also try matching the full folder name (handles cases without dash)
+        elif folder and folder[0].isdigit() and ". " in folder:
+            # Strip the number prefix: "3. Pink Door Franschhoek Owner's Villa"
+            stripped = folder.split(". ", 1)[1] if ". " in folder else folder
+            pid = _match_property_name(stripped)
+            if pid:
+                logger.debug("tagged_by_numbered_folder", file=str(rel_path), property_id=pid)
+                return [pid]
+
+    # 3. Check Trade-Portal rate subfolders: "Rates - La Fontaine"
+    for folder in folder_parts_raw:
+        match = _RATES_FOLDER_RE.match(folder)
+        if match:
+            property_name = match.group(1).strip()
+            pid = _match_property_name(property_name)
+            if pid:
+                logger.debug("tagged_by_rates_folder", file=str(rel_path), property_id=pid)
+                return [pid]
+
+    # 4. Check if any parent folder matches a property's kb_folder
     for pid, info in PROPERTY_REGISTRY.items():
         if pid == PropertyID.SHARED:
             continue
@@ -78,7 +117,7 @@ def tag_property_ids(file_path: Path, kb_root: Path) -> list[PropertyID]:
                     logger.debug("tagged_by_folder", file=str(rel_path), property_id=pid)
                     return [pid]
 
-    # 3. Check if any parent folder is a region → tag ALL properties in that region
+    # 5. Check if any parent folder is a region → tag ALL properties in that region
     for folder in folder_parts:
         region = REGION_ALIASES.get(folder)
         if region:
@@ -91,9 +130,19 @@ def tag_property_ids(file_path: Path, kb_root: Path) -> list[PropertyID]:
             )
             return region_pids
 
-    # 4. Fallback to shared
+    # 6. Fallback to shared
     logger.debug("tagged_as_shared", file=str(rel_path))
     return [PropertyID.SHARED]
+
+
+def _match_property_name(name: str) -> PropertyID | None:
+    """Match a property name from folder text against the alias index."""
+    name_lower = name.lower().strip()
+    # Try exact alias match first
+    for alias, pid in _FILENAME_ALIASES:
+        if alias in name_lower:
+            return pid
+    return None
 
 
 def classify_document_type(filename: str) -> str:

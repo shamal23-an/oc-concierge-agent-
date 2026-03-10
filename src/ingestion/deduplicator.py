@@ -27,15 +27,23 @@ class DeduplicationTracker:
     """Track seen content hashes to skip duplicate documents."""
 
     def __init__(self) -> None:
-        self._seen_hashes: set[str] = set()
+        self._seen_hashes: dict[str, str] = {}  # hash → first file path
 
-    def is_duplicate(self, text: str) -> bool:
-        """Check if content has already been seen."""
+    def is_duplicate(self, text: str, source_path: str = "") -> bool:
+        """Check if content has already been seen.
+
+        Returns True if duplicate. Logs which file was kept vs skipped.
+        """
         h = content_hash(text)
         if h in self._seen_hashes:
             return True
-        self._seen_hashes.add(h)
+        self._seen_hashes[h] = source_path
         return False
+
+    def get_kept_source(self, text: str) -> str | None:
+        """Return the source path of the first file with this content."""
+        h = content_hash(text)
+        return self._seen_hashes.get(h)
 
     @property
     def count(self) -> int:

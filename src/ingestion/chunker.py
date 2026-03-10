@@ -34,19 +34,28 @@ def chunk_text(
     metadata: dict | None = None,
     chunk_size: int | None = None,
     chunk_overlap: int | None = None,
+    document_type: str | None = None,
 ) -> list[Chunk]:
     """Section-aware chunking with markdown heading detection.
 
     Strategy:
     1. Split on markdown headings (##, ###) as primary boundaries
     2. Keep markdown tables intact (never split mid-table)
-    3. Within large sections, fall back to SentenceSplitter
-    4. Extract section_title and page_number into chunk metadata
+    3. For rate cards, keep table header + room-type rows together
+    4. Within large sections, fall back to SentenceSplitter
+    5. Extract section_title and page_number into chunk metadata
     """
     settings = get_settings()
     size = chunk_size or settings.chunk_size
     overlap = chunk_overlap or settings.chunk_overlap
     base_meta = metadata or {}
+    doc_type = document_type or base_meta.get("document_type", "")
+
+    # Rate card: use specialized chunking to keep headers with data
+    if doc_type == "rates":
+        rate_chunks = _chunk_rate_card(text, base_meta, chunk_size=size)
+        if rate_chunks:
+            return rate_chunks
 
     # Split text into sections by headings
     sections = _split_into_sections(text)
@@ -261,3 +270,154 @@ def _interleave_blocks(text: str, table_blocks: list[str]) -> list[dict]:
         blocks.append({"is_table": False, "text": remaining.strip()})
 
     return blocks
+
+
+# ── Rate card chunking ──────────────────────────────────────────────────── #
+
+_TABLE_HEADER_RE = re.compile(r"^(\|.+\|)\n(\|\s*[-:]+.*\|)$", re.MULTILINE)
+
+
+def _chunk_rate_card(
+    text: str,
+    base_meta: dict,
+    *,
+    chunk_size: int = 512,
+) -> list[Chunk]:
+    """Rate-card-aware chunking: repeats table header in every chunk.
+
+    Groups markdown table rows so that the header row + separator are
+    prepended to each chunk, keeping room-type/rate associations intact.
+    """
+    sections = _split_into_sections(text)
+    chunks: list[Chunk] = []
+    chunk_idx = 0
+
+    for section in sections:
+        section_text = section["text"]
+        table_blocks, _ = _separate_tables(section_text)
+
+        if not table_blocks:
+            # Non-table section: chunk normally
+            for chunk_str in _chunk_section(section_text, chunk_size=chunk_size, chunk_overlap=64):
+                chunks.append(
+                    Chunk(
+                        text=chunk_str,
+                        chunk_index=chunk_idx,
+                        metadata={
+                            **base_meta,
+                            "chunk_index": chunk_idx,
+                            "section_title": section["title"],
+                            "page_number": section["page"],
+                        },
+                        section_title=section["title"],
+                        page_number=section["page"],
+                    )
+                )
+                chunk_idx += 1
+            continue
+
+        for table_text in table_blocks:
+            lines = table_text.split("\n")
+            if len(lines) < 3:
+                # Too small for splitting, keep as-is
+                chunks.append(
+                    Chunk(
+                        text=table_text,
+                        chunk_index=chunk_idx,
+                        metadata={
+                            **base_meta,
+                            "chunk_index": chunk_idx,
+                            "section_title": section["title"],
+                            "page_number": section["page"],
+                        },
+                        section_title=section["title"],
+                        page_number=section["page"],
+                    )
+                )
+                chunk_idx += 1
+                continue
+
+            # Extract header (first 2 lines: header row + separator)
+            header_line = lines[0]
+            separator_line = lines[1] if _MD_TABLE_ROW_RE.match(lines[1].strip()) else ""
+            header_block = f"{header_line}\n{separator_line}" if separator_line else header_line
+
+            # Check if separator is actually a separator (| --- | --- |)
+            data_start = 2 if separator_line and "---" in separator_line else 1
+            data_rows = lines[data_start:]
+
+            if not data_rows:
+                chunks.append(
+                    Chunk(
+                        text=table_text,
+                        chunk_index=chunk_idx,
+                        metadata={
+                            **base_meta,
+                            "chunk_index": chunk_idx,
+                            "section_title": section["title"],
+                            "page_number": section["page"],
+                        },
+                        section_title=section["title"],
+                        page_number=section["page"],
+                    )
+                )
+                chunk_idx += 1
+                continue
+
+            # Group data rows into chunks that fit within chunk_size
+            header_len = len(header_block) + 1  # +1 for newline
+            current_rows: list[str] = []
+            current_len = header_len
+
+            for row in data_rows:
+                row_len = len(row) + 1  # +1 for newline
+                if current_rows and current_len + row_len > chunk_size:
+                    # Flush current group
+                    chunk_str = header_block + "\n" + "\n".join(current_rows)
+                    chunks.append(
+                        Chunk(
+                            text=chunk_str,
+                            chunk_index=chunk_idx,
+                            metadata={
+                                **base_meta,
+                                "chunk_index": chunk_idx,
+                                "section_title": section["title"],
+                                "page_number": section["page"],
+                            },
+                            section_title=section["title"],
+                            page_number=section["page"],
+                        )
+                    )
+                    chunk_idx += 1
+                    current_rows = []
+                    current_len = header_len
+
+                current_rows.append(row)
+                current_len += row_len
+
+            # Flush remaining rows
+            if current_rows:
+                chunk_str = header_block + "\n" + "\n".join(current_rows)
+                chunks.append(
+                    Chunk(
+                        text=chunk_str,
+                        chunk_index=chunk_idx,
+                        metadata={
+                            **base_meta,
+                            "chunk_index": chunk_idx,
+                            "section_title": section["title"],
+                            "page_number": section["page"],
+                        },
+                        section_title=section["title"],
+                        page_number=section["page"],
+                    )
+                )
+                chunk_idx += 1
+
+    if chunks:
+        logger.debug(
+            "rate_card_chunked",
+            num_chunks=len(chunks),
+            doc_type="rates",
+        )
+    return chunks

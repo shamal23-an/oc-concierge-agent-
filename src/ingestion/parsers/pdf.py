@@ -49,6 +49,10 @@ class PdfParser:
                 text = table_text
 
         if not text or len(text.strip()) < _MIN_TEXT_LENGTH:
+            # Third fallback: OCR for image-based PDFs
+            ocr_text = self._try_ocr(path)
+            if ocr_text:
+                return ocr_text
             logger.warning("pdf_parse_empty", path=str(path))
             return None
         return text.strip()
@@ -117,8 +121,40 @@ class PdfParser:
             return {}
 
     @staticmethod
+    def _try_ocr(path: Path) -> str | None:
+        """OCR fallback for image-based PDFs."""
+        try:
+            from src.ingestion.parsers.ocr import ocr_pdf
+
+            return ocr_pdf(path)
+        except Exception:
+            logger.debug("ocr_import_failed", path=str(path))
+            return None
+
+    @staticmethod
+    def _is_generic_header(row: list[str]) -> bool:
+        """Detect generic headers like Col1, Column 1, or all-empty."""
+        if all(c == "" for c in row):
+            return True
+        generic_patterns = {"col", "column", "unnamed", "field"}
+        for cell in row:
+            cell_lower = cell.lower().strip()
+            if not cell_lower:
+                continue
+            # "Col1", "Column 2", etc.
+            stripped = cell_lower.rstrip("0123456789 _")
+            if stripped in generic_patterns:
+                continue
+            # At least one non-generic cell → real header
+            return False
+        return True
+
+    @staticmethod
     def _table_to_markdown(table: list[list[str | None]]) -> str | None:
-        """Convert a pdfplumber table (list of rows) to markdown table format."""
+        """Convert a pdfplumber table (list of rows) to markdown table format.
+
+        Detects generic headers (Col1, Col2, empty) and promotes first data row.
+        """
         if not table or len(table) < 2:
             return None
 
@@ -131,14 +167,23 @@ class PdfParser:
         if all(all(c == "" for c in row) for row in cleaned):
             return None
 
+        # Detect and fix generic headers
+        header = cleaned[0]
+        data_rows = cleaned[1:]
+
+        if PdfParser._is_generic_header(header) and data_rows:
+            # Promote first data row to header
+            header = data_rows[0]
+            data_rows = data_rows[1:]
+
+        if not data_rows:
+            return None
+
         # Build markdown table
         lines = []
-        # Header row
-        header = cleaned[0]
         lines.append("| " + " | ".join(header) + " |")
         lines.append("| " + " | ".join("---" for _ in header) + " |")
-        # Data rows
-        for row in cleaned[1:]:
+        for row in data_rows:
             # Pad or truncate row to match header length
             padded = row + [""] * (len(header) - len(row))
             lines.append("| " + " | ".join(padded[: len(header)]) + " |")

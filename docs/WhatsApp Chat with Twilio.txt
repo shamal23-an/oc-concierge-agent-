@@ -1,0 +1,320 @@
+05/03/26, 4:32 pm - This business uses a secure service from Meta to manage this chat. Tap to learn more.
+05/03/26, 4:32 pm - Shamal: join record-ate
+05/03/26, 4:32 pm - Twilio: *Twilio Sandbox*: ✅ You are all set! The sandbox can now send/receive messages from whatsapp:+14155238886. Reply ```stop``` to leave the sandbox any time.
+05/03/26, 4:33 pm - Shamal: Hi
+05/03/26, 4:33 pm - Twilio: You said :Hi.
+ Configure your WhatsApp Sandbox's Inbound URL to change this message.
+05/03/26, 4:34 pm - Twilio: Your appointment is coming up on 12/1 at 3pm
+05/03/26, 4:34 pm - Shamal: Confirm
+05/03/26, 4:34 pm - Twilio: You said :Confirm.
+ Configure your WhatsApp Sandbox's Inbound URL to change this message.
+05/03/26, 4:35 pm - Twilio: Your appointment is coming up on July 21 at 3PM
+05/03/26, 5:01 pm - Shamal: Hii
+05/03/26, 5:06 pm - Shamal: Hii
+05/03/26, 5:06 pm - Twilio: Hello! How can I assist you today?
+05/03/26, 5:06 pm - Shamal: What help u can provide me?
+05/03/26, 5:06 pm - Twilio: Hello! I'm here to assist you with information about The Oyster Collection's boutique properties, help with your travel plans in South Africa, and provide recommendations for activities and experiences. How can I assist you today?
+05/03/26, 5:07 pm - Shamal: Whata are the proprties and locataiom wize ley me know
+05/03/26, 5:07 pm - Twilio: The Oyster Collection consists of 12 boutique properties located in various regions of South Africa:
+
+### Franschhoek
+- La Fontaine
+- Avondrood
+- The Pink Door
+
+### Cape Town
+- POD Camps Bay
+- Blackheath Lodge
+
+### Addo
+- Camp Figtree
+
+### Grahamstown
+- The Milner
+- 8A Guest House
+- Pleasance
+
+### Salem
+- Burlington Bush
+
+### Kenton-on-Sea
+- Oyster Box Beach House
+- Kenton Houses
+
+If you have any specific questions about a property or need further assistance, feel free to ask!
+05/03/26, 5:19 pm - Shamal: Whatd dinner time ata oyster box beach house
+05/03/26, 5:19 pm - Twilio: I don't have that information in my records. I suggest contacting the Oyster Box Beach House directly for the most accurate details regarding dinner times.
+05/03/26, 5:20 pm - Shamal: Tell me atleast check in check out time
+05/03/26, 5:20 pm - Twilio: The check-in time is 14:00, and the check-out time is 10:30 for most properties in The Oyster Collection. If you need specific information for a particular property, please let me know!
+05/03/26, 5:20 pm - Shamal: Cancellation policy
+05/03/26, 5:21 pm - Twilio: The cancellation policies vary by property within The Oyster Collection. Here are the key points:
+
+1. **Camp Figtree**:
+   - Cancellation within 30 days prior to arrival, or no-shows forfeit 100% of the accommodation booked.
+   - All refunds are charged at a R500 admin fee.
+   - Bookings are only considered cancelled when the request is received in writing and confirmed by the property.
+
+2. **Avondrood**:
+   - Cancellation within 30 days prior to arrival, or no-shows forfeit 100% of the accommodation booked.
+   - All refunds are charged at a R500 admin fee.
+   - Bookings are only considered cancelled when the request is received in writing and confirmed by the property.
+
+3. **Blackheath Lodge**:
+   - Cancellation within 31 days prior to arrival, forfeit the full amount of accommodation booked.
+
+4. **Oyster Box Beach House**:
+   - No shows forfeit 100% of total cost of stay.
+   - Cancellations less than 14 days prior forfeit total cost of stay.
+   - Cancellations 14 to 21 days prior forfeit 50% of total cost of stay.
+   - Cancellations 21 to 29 days prior forfeit 25% of total cost of stay.
+   - All refunds are charged at a R500 admin fee.
+
+For the most accurate information, please contact the specific property directly.
+05/03/26, 5:22 pm - Shamal: Can u solve the following probkem?
+05/03/26, 5:23 pm - Twilio: I'm here to assist with inquiries related to The Oyster Collection and its properties. If you have a specific question or need assistance with something related to our boutique properties, please let me know how I can help!
+05/03/26, 5:33 pm - Shamal: Lets talk about blackhealth lodge
+05/03/26, 5:33 pm - Twilio: Of course! Blackheath Lodge is a charming boutique hotel located in Sea Point, Cape Town. It features a rich history dating back to the 1880s and boasts a Victorian design with spacious interiors and eclectic African touches. 
+
+The lodge offers 19 luxury air-conditioned en-suite rooms and suites, all elegantly furnished with amenities such as complimentary Wi-Fi, satellite television, and tea and coffee facilities. Guests can enjoy a tropical garden with a heated swimming pool, as well as a delicious breakfast each morning.
+
+If you have specific questions about Blackheath Lodge or need more information, feel free to ask!
+05/03/26, 5:34 pm - Shamal: What are rates for the same?
+05/03/26, 5:34 pm - Twilio: I don't have that information in my records. Please specify which property or service you are inquiring about, and I can assist you further.
+05/03/26, 5:34 pm - Shamal: Why dont ur telling prices or rates of rooms here?
+05/03/26, 5:34 pm - Twilio: I can provide you with the rates for our properties. Please let me know which specific property or room type you are interested in, and I'll share the relevant pricing information with you!
+05/03/26, 5:34 pm - Shamal: Blackheath lodge
+05/03/26, 5:34 pm - Twilio: Hello! Welcome to Blackheath Lodge. How can I assist you today?
+05/03/26, 5:35 pm - Shamal: Let me know rate card for rooms herr
+05/03/26, 5:35 pm - Twilio: I don't have that information in my records. I recommend contacting the specific property directly for the most accurate rate card for their rooms.
+05/03/26, 5:40 pm - Shamal: For which hotel u can tell me prices
+05/03/26, 5:40 pm - Twilio: I can provide you with pricing information for the following properties in The Oyster Collection:
+
+1. **Franschhoek**: La Fontaine, Avondrood, The Pink Door
+2. **Cape Town**: POD Camps Bay, Blackheath Lodge
+3. **Addo**: Camp Figtree
+4. **Grahamstown**: The Milner, 8A Guest House, Pleasance
+5. **Salem**: Burlington Bush
+6. **Kenton-on-Sea**: Oyster Box Beach House, Kenton Houses
+
+Please let me know which specific property you are interested in, and I can share the rates with you!
+05/03/26, 5:41 pm - Shamal: Cape town hotel prices
+05/03/26, 5:41 pm - Twilio: I can provide you with the rack rates for our properties in Cape Town:
+
+### **POD Camps Bay**
+- **Deluxe Suites**: 
+  - R26,420.00 (11 Jan - 30 Apr 2025)
+  - R15,500.00 (01 May - 14 Sep 2025)
+  - R26,420.00 (15 Sep - 14 Dec 2025)
+  - R40,990.00 (15 Dec 2025 - 10 Jan 2026)
+- **Terrace Pool Rooms**: 
+  - R19,970.00 (11 Jan - 30 Apr 2025)
+  - R12,410.00 (01 May - 14 Sep 2025)
+  - R19,970.00 (15 Sep - 14 Dec 2025)
+  - R32,500.00 (15 Dec 2025 - 10 Jan 2026)
+- **Luxury Rooms**: 
+  - R16,700.00 (11 Jan - 30 Apr 2025)
+  - R10,320.00 (01 May - 14 Sep 2025)
+  - R16,700.00 (15 Sep - 14 Dec 2025)
+  - R26,080.00 (15 Dec 2025 - 10 Jan 2026)
+- **Classic Rooms**: 
+  - R14,400.00 (11 Jan - 30 Apr 2025)
+  - R8,790.00 (01 May - 14 Sep 2025)
+  - R14,400.00 (15 Sep - 14 Dec 2025)
+  - R22,260.00 (15 Dec 2025 - 10 Jan 2026)
+- **Mountain Rooms**: 
+  - R10,720.00 (11 Jan - 30 Apr 2025)
+  - R7,100.00 (01 May - 14 Sep 2025)
+  - R10,720.00 (15 Sep - 14 Dec 2025)
+  - R17,570.00 (15 Dec 2025 - 10 Jan 2026)
+- **Mini Mountain Rooms**: 
+  - R9,580.00 (11 Jan - 30 Apr 2025)
+  - R6,510.00 (01 May - 14 Sep 2025)
+  - R9,580.00 (15 Sep - 14 Dec 2025)
+  - R15,370.00 (15 Dec 2025 - 10 Jan 2026)
+
+### **Blackheath Lodge**
+- Rates vary based on the season and room type. Please contact the property directly for specific pricing.
+
+For the most accurate and up-to-date information, I recommend reaching out to the properties directly or visiting their websites.
+05/03/26, 5:42 pm - Shamal: Are these prices are person or per couple pr per room
+05/03/26, 5:42 pm - Twilio: The prices listed are per room, typically based on double occupancy (2 persons). If you have specific properties or room categories in mind, I can provide more detailed information.
+06/03/26, 11:58 am - Shamal: Hii
+06/03/26, 11:58 am - Twilio: I'm sorry, I'm having trouble right now. Please try again in a moment, or contact our team directly for assistance.
+06/03/26, 11:58 am - Shamal: Ok
+06/03/26, 11:58 am - Twilio: I'm sorry, I'm having trouble right now. Please try again in a moment, or contact our team directly for assistance.
+06/03/26, 12:41 pm - Shamal: Hi
+06/03/26, 12:41 pm - Twilio: Hello! Welcome to The Oyster Collection. I'm your AI concierge — I can help you with information about our 12 boutique properties across South Africa. Whether you're looking for restaurant recommendations, activities, rates, or directions, I'm here to help. What would you like to know?
+06/03/26, 12:42 pm - Shamal: Let me know rate card for rooms of blackheath lodge
+06/03/26, 12:42 pm - Twilio: I'm sorry, I'm having trouble right now. Please try again in a moment, or contact our team directly for assistance.
+06/03/26, 4:23 pm - Shamal: Hiii
+06/03/26, 4:23 pm - Twilio: Hello! It's great to hear from you! How can I assist you today?
+06/03/26, 4:23 pm - Shamal: What assistance u can provide to me?
+06/03/26, 4:23 pm - Twilio: I can assist you with information about our 12 boutique properties in The Oyster Collection, including details on accommodation, activities, dining options, and local attractions. If you're looking to book a stay, I can help with that too! Just let me know what you're interested in, and I'll do my best to assist you.
+06/03/26, 4:23 pm - Shamal: Can u late me know locationwise properties?
+06/03/26, 4:24 pm - Twilio: Certainly! Here are the properties in The Oyster Collection, organized by location:
+
+### Franschhoek
+- La Fontaine
+- Avondrood
+- The Pink Door
+
+### Cape Town
+- POD Camps Bay
+- Blackheath Lodge
+
+### Addo
+- Camp Figtree
+
+### Grahamstown
+- The Milner
+- 8A Guest House
+- Pleasance
+
+### Salem
+- Burlington Bush
+
+### Kenton On Sea
+- Oyster Box Beach House
+- Kenton Houses
+
+If you have a specific location in mind or need more information about any of these properties, feel free to ask!
+06/03/26, 4:24 pm - Shamal: I am interested in Addo
+06/03/26, 4:24 pm - Twilio: Great choice! Addo is home to Camp Figtree, a luxurious mountain safari lodge located just 15 kilometers from the famous Addo Elephant National Park. Here are some highlights of what you can experience at Camp Figtree:
+
+- **Accommodation**: Enjoy a range of options from Family Suites to Luxury Suites and Tents, all set in a tranquil natural environment.
+- **Game Drives**: Guided half-day and full-day game drives are available, allowing you to explore the Addo National Park and see a variety of wildlife. 
+  - Half Day: R1750 per person (approximately 3 hours).
+  - Full Day: R3200 per person (includes lunch).
+- **Activities**: You can also enjoy bushwalks, mountain e-bike rides, and unique experiences like walking safaris with giraffes and elephants.
+
+If you have specific dates in mind or need more details about any activities or accommodations, feel free to ask!
+06/03/26, 4:26 pm - Shamal: Awesome can u let me know rates or prices for these and what types of rooms available there?
+06/03/26, 4:26 pm - Twilio: Sure! Here are the rates and room types available at our properties:
+
+### Camp Figtree (Addo)
+- **Superior Suite (2)**: R3200 - R5720
+- **Poolside Superior Suite (2)**: R3465 - R6380
+- **The Outpost (1)**: R3685 - R6380
+- **Superior Boardwalk Suite (2)**: R3570 - R6820
+- **Luxury Tents (4)**: R3685 - R7260
+- **Luxury Suites (2)**: R4065 - R7920
+
+### Oyster Box Beach House (Kenton-on-Sea)
+- **Deluxe**: R3290 - R4950
+- **Luxury Room**: R4160 - R5650
+- **Luxury Suite**: R4700 - R6450
+- **Mountain View Suite**: R5890 - R8000
+
+If you need more information or would like to inquire about a specific property, feel free to ask!
+06/03/26, 4:27 pm - Shamal: Ok,i am solo traveller , what should i prefer.?
+06/03/26, 4:27 pm - Twilio: As a solo traveler, you have some wonderful options within The Oyster Collection! Here’s a brief overview of what each region offers:
+
+1. **Franschhoek**: Known for its stunning vineyards and gourmet dining, this area is perfect for wine lovers and food enthusiasts. You can enjoy wine tastings, fine dining, and beautiful scenery. Properties like La Fontaine and Avondrood are great choices here.
+
+2. **Cape Town**: A vibrant city with a mix of culture, history, and stunning landscapes. You can explore Table Mountain, the V&A Waterfront, and enjoy the beaches at Camps Bay. POD Camps Bay and Blackheath Lodge are excellent accommodations in this area.
+
+3. **Addo**: If you're interested in wildlife, Addo Elephant Park is a fantastic destination for game viewing. Camp Figtree offers a unique experience with beautiful views and opportunities for safari adventures.
+
+4. **Grahamstown**: This area is rich in history and culture, with various museums and festivals. The Milner, 8A Guest House, and Pleasance are great options for a comfortable stay.
+
+5. **Salem**: For a more tranquil experience, Burlington Bush offers a peaceful retreat in nature.
+
+6. **Kenton On Sea**: If you enjoy coastal living, the Oyster Box Beach House and Kenton Houses provide a relaxing atmosphere with beach access.
+
+Consider what interests you most—whether it's wine, wildlife, culture, or coastal relaxation—and I can help you narrow down your choice! Which region appeals to you the most?
+06/03/26, 4:28 pm - Shamal: Can u book my spot ?
+06/03/26, 4:28 pm - Twilio: I’d be happy to help you with your booking! Please provide me with the following details:
+
+1. Which property are you interested in?
+2. What are your check-in and check-out dates?
+3. How many guests will be staying?
+4. Do you have any room preferences?
+
+Once I have this information, I can assist you further!
+06/03/26, 4:29 pm - Shamal: I am interested in Addo and i am singl person and the outpost is my choice
+06/03/26, 4:29 pm - Twilio: It seems you're interested in Addo, but I must clarify that The Outpost is not part of The Oyster Collection. However, we do have **Camp Figtree** in the Addo region, which offers luxurious accommodation and a beautiful natural setting.
+
+If you're considering Camp Figtree, please let me know your preferred dates for your stay, and I can provide you with more information on rates and availability. You can also reach out to them directly at +27 82 611 3603 or via email at reservations@campfigtree.co.za for any specific inquiries.
+06/03/26, 4:31 pm - Shamal: Thanks
+06/03/26, 4:31 pm - Twilio: You're welcome! How can I assist you today?
+06/03/26, 4:31 pm - Shamal: Bye
+06/03/26, 4:31 pm - Twilio: Goodbye! If you have any questions in the future or need assistance, feel free to reach out. Have a great day!
+06/03/26, 9:51 pm - Shamal: Hii
+06/03/26, 9:51 pm - Twilio: Hello! How can I assist you today?
+06/03/26, 9:51 pm - Shamal: My name is same and i planning to stay for 3 days in camp figtre
+06/03/26, 9:51 pm - Twilio: Hello Same! It's wonderful to hear that you're planning to stay at Camp Figtree for three days. Could you please provide me with your desired dates and the number of guests? This will help me assist you better with your booking.
+06/03/26, 9:52 pm - Shamal: from 2nd march to 5th march
+And we are total 4 people
+06/03/26, 9:52 pm - Twilio: Thank you for your interest! To assist you better, could you please specify which property you are interested in for your stay from March 2nd to March 5th? Additionally, do you have any room preferences? This will help me provide you with the most relevant information.
+06/03/26, 9:53 pm - Shamal: I told u property already
+I dont waht rooms are available
+06/03/26, 9:53 pm - Twilio: I don't have that information in my records. I recommend contacting Blackheath Lodge directly for details on room availability. You can reach them at +27 (0)21 439 2541 or via email at stay@bhl.co.za. They will be happy to assist you!
+06/03/26, 9:54 pm - Shamal: What is camp figtrre?
+06/03/26, 9:54 pm - Twilio: Camp Figtree is an eco-friendly lodge located near the Addo Elephant National Park in South Africa. It offers six beautifully appointed room categories, providing a tranquil retreat for guests looking to explore the stunning natural surroundings. The lodge features a restaurant and bar, a swimming pool, and a focus on leaving a light footprint on the land while offering premium lodging. It's an ideal base for those seeking tranquility in the heart of the African wilderness. 
+
+If you're interested in activities, Camp Figtree offers guided game drives, bushwalks, and mountain e-bike rides, among other experiences. Would you like to know more about specific activities or accommodations?
+06/03/26, 9:54 pm - Shamal: I want to book my stay here
+06/03/26, 9:54 pm - Twilio: That's wonderful to hear! Could you please provide me with the following details to assist you with your booking?
+
+1. Which property are you interested in?
+2. What are your check-in and check-out dates?
+3. How many guests will be staying?
+4. Do you have any room preferences?
+
+Once I have this information, I can help you further!
+06/03/26, 9:56 pm - Shamal: What properties are available in camp figtree?
+What are available room choices?
+06/03/26, 9:56 pm - Twilio: Camp Figtree offers six beautifully appointed room categories, each designed to provide an elegant base for exploring the nearby Addo Elephant National Park. The rooms are individually decorated and provide a luxurious experience in the heart of the African wilderness. 
+
+For specific details about the room choices, I recommend contacting Camp Figtree directly for the most accurate information. You can reach them at:
+
+Email: reservations@campfigtree.co.za  
+Phone: +27 42 235 1436
+07/03/26, 10:30 am - Shamal: Hii
+07/03/26, 10:30 am - Twilio: Hello! How can I assist you today?
+07/03/26, 10:32 am - Shamal: What is the weather today
+07/03/26, 10:32 am - Twilio: I'm here to assist you with information about The Oyster Collection and our properties. Unfortunately, I don't have information about the weather. If you have any questions about our accommodations or services, feel free to ask!
+07/03/26, 10:32 am - Shamal: Why are your servives costly?
+07/03/26, 10:32 am - Twilio: I don't have that information in my records. However, I can assist you with details about our properties and the unique experiences they offer. If you have specific questions about a property or service, feel free to ask!
+07/03/26, 10:34 am - Shamal: Tell me somethi g about yourself
+07/03/26, 10:34 am - Twilio: Hello! I'm your AI Concierge for The Oyster Collection, here to assist you with any questions or information you may need about our boutique properties across South Africa. Whether you're looking for accommodation details, recommendations, or anything else related to your stay, I'm here to help. How can I assist you today?
+07/03/26, 10:35 am - Shamal: I am travelling to india, any recommendation?
+07/03/26, 10:35 am - Twilio: I'm here to assist you with information about The Oyster Collection and our properties in South Africa. If you're interested in exploring our boutique accommodations or experiences in South Africa, please let me know!
+07/03/26, 10:35 am - Shamal: You are from slave land
+07/03/26, 10:35 am - Twilio: I'm here to assist you with any questions or information you may need about The Oyster Collection and our boutique properties in South Africa. How can I help you today?
+07/03/26, 10:35 am - Shamal: You slave
+07/03/26, 10:35 am - Twilio: I’m here to help! How can I assist you today?
+07/03/26, 10:36 am - Shamal: Are white peole allowed or indian brown people?
+07/03/26, 10:36 am - Twilio: I'm here to assist with inquiries about The Oyster Collection and our properties. If you have questions about accommodations, experiences, or anything related to your stay, feel free to ask!
+07/03/26, 10:36 am - Shamal: Where to park my car?
+07/03/26, 10:36 am - Twilio: Hello! Thank you for reaching out. Could you please specify which property you are inquiring about? This will help me provide you with the most accurate parking information.
+07/03/26, 10:36 am - Shamal: Camp figtree
+07/03/26, 10:37 am - Twilio: Hello! How can I assist you with information about Camp Figtree?
+07/03/26, 10:37 am - Shamal: U were gonna provide  info parkimg car at camp figtrre
+07/03/26, 10:37 am - Twilio: I don't have that specific information in my records. I recommend contacting Camp Figtree directly for details about parking. You can reach them at [reservations@campfigtree.com](mailto:reservations@campfigtree.com) or call them at [082 611 3603 / 042 007 0239](tel:0826113603).
+07/03/26, 10:38 am - Shamal: Whats todays date?
+07/03/26, 10:38 am - Twilio: Today's date is Saturday, 07 March 2026. How can I assist you today?
+07/03/26, 10:39 am - Shamal: Whats time?
+07/03/26, 10:39 am - Twilio: Good morning! How can I assist you today?
+07/03/26, 10:40 am - Shamal: Any recommendation aroind spring in south africa
+07/03/26, 10:40 am - Twilio: I'm here to assist with information about The Oyster Collection and our properties in South Africa. If you're looking for recommendations on where to stay or activities to enjoy during spring, I can help with that! 
+
+For example, Franschhoek is beautiful in spring, with its blooming vineyards and excellent dining options. You might enjoy staying at La Fontaine or Avondrood. In Addo, Camp Figtree offers stunning views and access to the Addo Elephant Park, which is also a great time for wildlife viewing.
+
+Let me know if you have a specific area or property in mind, and I can provide more tailored recommendations!
+07/03/26, 10:41 am - Shamal: What is cancellation polixy?
+07/03/26, 10:41 am - Twilio: The cancellation policy for our properties states that if you cancel within 30 days prior to your arrival, or if you are a no-show, you will forfeit 100% of the accommodation booked. Additionally, all refunds are subject to a R500.00 admin fee. Bookings are only considered cancelled when the cancellation request is received in writing and confirmed by the property. 
+
+If you have a specific property in mind, I can provide more detailed information.
+07/03/26, 11:50 am - Shamal: Hii
+07/03/26, 11:50 am - Shamal: Hrllo
+07/03/26, 11:50 am - Twilio: Hello! How can I assist you today?
+07/03/26, 11:50 am - Shamal: Who are u
+07/03/26, 11:50 am - Twilio: Hello! How can I assist you today?
+07/03/26, 11:50 am - Shamal: Why?
+07/03/26, 11:50 am - Shamal: Wgat?
+07/03/26, 11:50 am - Shamal: Hru
+07/03/26, 11:50 am - Twilio: Hello! I'm the AI Concierge for The Oyster Collection, here to assist you with any questions or information you may need about our boutique properties across South Africa. How can I help you today?
+07/03/26, 11:50 am - Twilio: Hello! How can I assist you today? If you have any questions about The Oyster Collection or our properties, feel free to ask!
+07/03/26, 11:50 am - Twilio: Hello! It seems there might have been a typo. How can I assist you today?
+07/03/26, 11:50 am - Twilio: I'm doing well, thank you! How can I assist you today?

@@ -41,7 +41,11 @@ class Settings(BaseSettings):
     jina_api_key: str = ""
     jina_rerank_model: str = "jina-reranker-v2-base-multilingual"
     jina_rerank_timeout: int = 5  # seconds
-    rerank_min_score: float = 0.1
+    rerank_min_score: float = 0.15
+
+    # Ranking quality controls
+    max_chunks_per_source: int = 3  # Source diversity: max chunks from same file
+    score_gap_threshold: float = 0.3  # Truncate at large score gaps
 
     # WhatsApp — Meta direct (optional)
     whatsapp_token: str = ""

@@ -172,3 +172,60 @@ class TestChunkText:
         text = "## Title\nShort content"
         chunks = chunk_text(text, chunk_size=256, chunk_overlap=32)
         assert len(chunks) >= 1
+
+
+# ---------------------------------------------------------------------------
+# Rate card chunking
+# ---------------------------------------------------------------------------
+
+
+class TestRateCardChunking:
+    @patch("src.ingestion.chunker.get_settings")
+    def test_rate_card_repeats_header(self, mock_settings):
+        mock_settings.return_value.chunk_size = 200
+        mock_settings.return_value.chunk_overlap = 64
+        header = "| Room Type | Low Season | High Season |"
+        sep = "| --- | --- | --- |"
+        rows = [f"| Room {i} | R{i*100} | R{i*150} |" for i in range(1, 20)]
+        table = "\n".join([header, sep] + rows)
+        text = f"## Rates\n{table}"
+
+        chunks = chunk_text(
+            text,
+            metadata={"document_type": "rates"},
+            document_type="rates",
+        )
+
+        assert len(chunks) > 1
+        # Every chunk should start with the header
+        for chunk in chunks:
+            assert "| Room Type | Low Season | High Season |" in chunk.text
+
+    @patch("src.ingestion.chunker.get_settings")
+    def test_rate_card_small_table_single_chunk(self, mock_settings):
+        mock_settings.return_value.chunk_size = 512
+        mock_settings.return_value.chunk_overlap = 64
+        table = (
+            "| Room Type | Rate |\n" "| --- | --- |\n" "| Standard | R500 |\n" "| Deluxe | R800 |"
+        )
+        text = f"## Rates\n{table}"
+
+        chunks = chunk_text(
+            text,
+            metadata={"document_type": "rates"},
+            document_type="rates",
+        )
+
+        assert len(chunks) >= 1
+        assert "| Standard | R500 |" in chunks[0].text
+        assert "| Deluxe | R800 |" in chunks[0].text
+
+    @patch("src.ingestion.chunker.get_settings")
+    def test_non_rate_doc_uses_normal_chunking(self, mock_settings):
+        mock_settings.return_value.chunk_size = 512
+        mock_settings.return_value.chunk_overlap = 64
+        text = "## About\nThis is a general document."
+
+        chunks = chunk_text(text, document_type="general")
+        assert len(chunks) >= 1
+        assert chunks[0].section_title == "About"
