@@ -198,7 +198,24 @@ class TestLocalRankerUnchanged:
 
 class TestSourceDiversity:
     def test_limits_chunks_per_source(self):
-        """Max 3 chunks from the same source file."""
+        """Max 3 chunks from the same source file (non-rate query)."""
+        chunks = [
+            RetrievedChunk(
+                content=f"Chunk {i}",
+                score=0.9 - i * 0.01,
+                property_ids=["la_fontaine"],
+                source_file="info.pdf",
+                metadata={"document_type": "information_guide"},
+            )
+            for i in range(5)
+        ]
+        with patch("src.retrieval.ranker.get_settings") as m:
+            m.return_value = MagicMock(max_chunks_per_source=3, score_gap_threshold=0.3)
+            result = rank_chunks(chunks, query="tell me about the property")
+        assert len(result) == 3
+
+    def test_rates_query_relaxes_diversity(self):
+        """Rate queries allow up to 4 chunks from the same source."""
         chunks = [
             RetrievedChunk(
                 content=f"Chunk {i}",
@@ -211,8 +228,8 @@ class TestSourceDiversity:
         ]
         with patch("src.retrieval.ranker.get_settings") as m:
             m.return_value = MagicMock(max_chunks_per_source=3, score_gap_threshold=0.3)
-            result = rank_chunks(chunks, query="rates")
-        assert len(result) == 3
+            result = rank_chunks(chunks, query="what are the rates?")
+        assert len(result) == 4
 
     def test_diverse_sources_all_kept(self):
         """Chunks from different sources should all be kept."""

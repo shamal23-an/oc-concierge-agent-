@@ -228,6 +228,7 @@ async def trace_query(query: str) -> None:
         property_ids=property_ids,
         region=region,
         sparse_vector=sparse_vector,
+        query=query,
     )
     retrieval_time = time.perf_counter() - t0
 

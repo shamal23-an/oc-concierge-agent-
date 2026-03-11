@@ -40,9 +40,11 @@ def build_graph(
         redis_client=redis_client,
     )
 
+    generate_fn = partial(generate_node, redis_client=redis_client)
+
     graph.add_node("resolve", resolve_fn)
     graph.add_node("retrieve", retrieve_fn)
-    graph.add_node("generate", generate_node)
+    graph.add_node("generate", generate_fn)
 
     graph.set_entry_point("resolve")
 
