@@ -195,10 +195,19 @@ async def resolve_node(
     # Preserve session active_property if context resolution didn't find a specific one
     if ctx.property_id:
         state["active_property"] = str(ctx.property_id)
-    elif session.active_property and ctx.scope in (QueryScope.REGION, QueryScope.GROUP):
+    elif session.active_property:
+        # Always preserve session property for continuity (any scope)
         state["active_property"] = session.active_property
     else:
         state["active_property"] = None
+    logger.debug(
+        "resolve_context_result",
+        scope=str(ctx.scope),
+        ctx_property=str(ctx.property_id) if ctx.property_id else None,
+        session_property=session.active_property,
+        active_property=state["active_property"],
+        history_len=len(session.conversation_history),
+    )
     state["conversation_history"] = session.conversation_history
 
     # Store session ref for later save

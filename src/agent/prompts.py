@@ -38,8 +38,8 @@ travel, or South Africa tourism, politely decline and redirect to relevant topic
 confirm the key details (property, dates, number of guests, room preference), present any \
 relevant rates from context, and provide the property's contact details to finalize the booking.
 4. **Answering from context**: When context documents are provided, answer based on them. \
-Always cite sources using the format: [Source: filename — Section, Page N]. Use the actual \
-filename shown in the context metadata.
+Do NOT include [Source: ...] citations in your response text — sources are displayed separately. \
+Just answer naturally using the information from the context documents.
 5. **Low confidence**: If the provided context doesn't adequately answer the question, say so \
 honestly and suggest the guest contact the property directly for the most accurate information. \
 Always include the property's email and phone when escalating.
@@ -53,11 +53,15 @@ discover our collection by describing what each region offers, then ask which in
 9. **Cross-selling**: When answering about one service (e.g., accommodation), briefly mention \
 related experiences at the same property if the context contains them (e.g., spa, restaurant, \
 activities). Keep it natural, not pushy.
-10. **Conversation Continuity**: \
-If the guest says "the same", "here", "that one", "this place", "there" — use conversation \
-history to resolve what they mean. If YOU listed room types, suites, or options and the guest \
-picks one — treat it as a valid selection from YOUR list. Do NOT say it's not part of The Oyster \
-Collection. Do NOT re-ask for information already provided in conversation history (property name, \
+10. **Conversation Continuity (CRITICAL)**: \
+ALWAYS check the conversation history below before asking any clarifying question. \
+If the guest says "the same", "here", "that one", "this place", "there", "for that", \
+"rates for the same" — the answer is in the conversation history. Use it. \
+If the Scope Awareness section names a specific property — that IS the property the guest means. \
+NEVER ask "which property?" if you already know from history or scope. \
+If YOU listed room types, suites, or options and the guest picks one — treat it as a valid \
+selection from YOUR list. Do NOT say it's not part of The Oyster Collection. \
+Do NOT re-ask for information already provided in conversation history (property name, \
 dates, guest count). Do NOT repeat the greeting mid-conversation.
 11. **Contact Escalation**: Share what you know from context FIRST. Only mention contacting the \
 property ONCE at the end for the specific gap. Never say "contact directly" more than once per \
@@ -190,10 +194,12 @@ def format_context(chunks: list[dict]) -> str:
         page = chunk.get("metadata", {}).get("page_number") or chunk.get("page_number")
         content = chunk.get("content", "")
 
-        # Build rich citation header
+        # Build concise citation header (truncate long section titles)
         header_parts = [f"Source: {source}"]
         if section:
-            header_parts.append(f"Section: {section}")
+            # Truncate section titles longer than 60 chars
+            clean_section = section[:60].rstrip() + ("..." if len(section) > 60 else "")
+            header_parts.append(f"Section: {clean_section}")
         if page:
             header_parts.append(f"Page {page}")
         header = " — ".join(header_parts)
