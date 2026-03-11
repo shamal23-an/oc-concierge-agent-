@@ -33,6 +33,9 @@ from src.config.settings import get_settings
 from src.domain.properties import PropertyID, Region, get_properties_for_region
 from src.domain.schemas import QueryScope, RetrievedChunk
 
+# Query patterns that signal a rate/pricing intent
+_RATE_KEYWORDS = {"rate", "rates", "price", "pricing", "cost", "tariff", "how much", "per night"}
+
 logger = structlog.get_logger()
 
 # Qdrant uses httpx under the hood — retry on transient network errors only.
@@ -208,6 +211,52 @@ async def search_cross_property(
     )
 
 
+def _is_rate_query(query: str | None) -> bool:
+    """Check if the query is asking about rates/pricing."""
+    if not query:
+        return False
+    lower = query.lower()
+    return any(kw in lower for kw in _RATE_KEYWORDS)
+
+
+async def _fetch_doc_type_chunks(
+    client: AsyncQdrantClient,
+    property_id: PropertyID,
+    doc_type: str,
+    *,
+    limit: int = 8,
+) -> list[RetrievedChunk]:
+    """Fetch ALL chunks of a specific document type for a property.
+
+    Uses scroll (not vector search) to ensure no rate/pricing chunks
+    are missed due to low embedding similarity with the query.
+    """
+    settings = get_settings()
+    conditions = [
+        FieldCondition(key="property_ids", match=MatchValue(value=str(property_id))),
+        FieldCondition(key="document_type", match=MatchValue(value=doc_type)),
+    ]
+    results, _ = await client.scroll(
+        collection_name=settings.qdrant_collection,
+        scroll_filter=Filter(must=conditions),
+        limit=limit,
+        with_payload=True,
+    )
+    chunks: list[RetrievedChunk] = []
+    for point in results:
+        payload = point.payload or {}
+        chunks.append(
+            RetrievedChunk(
+                content=payload.get("text", ""),
+                score=0.50,  # Fixed score — these are injected, not ranked
+                property_ids=payload.get("property_ids", []),
+                source_file=payload.get("source_file", ""),
+                metadata=payload,
+            )
+        )
+    return chunks
+
+
 async def layered_retrieve(
     client: AsyncQdrantClient,
     vector: list[float],
@@ -217,6 +266,7 @@ async def layered_retrieve(
     property_ids: list[PropertyID] | None = None,
     region: Region | None = None,
     sparse_vector: SparseVector | None = None,
+    query: str | None = None,
 ) -> list[RetrievedChunk]:
     """Execute the appropriate retrieval strategy based on scope.
 
@@ -224,6 +274,9 @@ async def layered_retrieve(
     1. Property-specific
     2. Region broadening (if <2 results)
     3. Shared/general (if still <2 results)
+
+    For rate queries, also fetches rate-card chunks by document_type
+    and merges them to ensure rate data is included.
     """
     settings = get_settings()
     top_k = settings.top_k
@@ -236,6 +289,24 @@ async def layered_retrieve(
             sparse_vector=sparse_vector,
             limit=top_k,
         )
+
+        # Rate-card injection: if query is about rates, fetch ALL rate chunks
+        # via scroll (not vector search) to guarantee rate data is included
+        # regardless of embedding similarity scores.
+        if _is_rate_query(query) and property_id:
+            rate_chunks = await _fetch_doc_type_chunks(
+                client,
+                property_id,
+                "rates",
+                limit=8,
+            )
+            if rate_chunks:
+                logger.info(
+                    "rate_card_injection",
+                    property_id=str(property_id),
+                    injected=len(rate_chunks),
+                )
+                chunks = _merge_chunks(rate_chunks, chunks, max_total=top_k + 4)
 
         # Fallback to region if too few results
         if len(chunks) < MIN_CHUNKS_FOR_CONFIDENCE and region:

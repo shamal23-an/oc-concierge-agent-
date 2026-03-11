@@ -49,6 +49,16 @@ OUT_OF_SCOPE_PATTERNS = {
     "translate to",
     "who is the president",
     "capital of",
+    "write me a song",
+    "write a song",
+    "write me a poem",
+    "write a poem",
+    "compose a song",
+    "sing me",
+    "tell me a joke",
+    "tell a joke",
+    "what is the weather",
+    "weather forecast",
 }
 
 # Booking intent patterns (trigger lead capture flow)

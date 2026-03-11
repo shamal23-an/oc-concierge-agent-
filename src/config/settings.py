@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     confidence_threshold: float = 0.7
     chunk_size: int = 512
     chunk_overlap: int = 64
-    top_k: int = 7
+    top_k: int = 10
 
     # Jina Reranker (optional — fallback to local ranking if empty)
     jina_api_key: str = ""

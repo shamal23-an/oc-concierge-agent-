@@ -180,5 +180,92 @@ class TestSystemPrompt:
         assert "Contact Escalation" in SYSTEM_PROMPT
 
     def test_context_and_history(self):
-        """Prompt should reference both context AND conversation history."""
-        assert "context documents AND conversation history" in SYSTEM_PROMPT
+        """Prompt should reference Quick Facts, context AND conversation history."""
+        assert "Quick Facts, context documents, AND conversation history" in SYSTEM_PROMPT
+
+
+class TestQuickFacts:
+    """Property fact sheet injection tests."""
+
+    def test_la_fontaine_facts_in_context(self):
+        """Quick facts injected as Document 0 in context for property scope."""
+        result = format_context(
+            [{"source_file": "test.pdf", "content": "Some content"}],
+            property_id="la_fontaine",
+            scope="property",
+        )
+        assert "Document 0" in result
+        assert "Verified Property Facts" in result
+        assert "Check-in: 14:00" in result
+        assert "Check-out: 10:30" in result
+        assert "Breakfast" in result
+
+    def test_pod_facts_in_context(self):
+        result = format_context(
+            [],
+            property_id="pod_camps_bay",
+            scope="property",
+        )
+        assert "Check-out: 11:00" in result
+        assert "Children over 12" in result
+
+    def test_unknown_property_no_facts_in_context(self):
+        result = format_context(
+            [{"source_file": "test.pdf", "content": "Some content"}],
+            property_id="nonexistent",
+            scope="property",
+        )
+        assert "Document 0" not in result
+
+    def test_sparse_property_facts_in_context(self):
+        result = format_context(
+            [],
+            property_id="pleasance",
+            scope="property",
+        )
+        assert "Self-catering cottage" in result
+
+    def test_no_property_id_no_facts(self):
+        result = format_context(
+            [{"source_file": "test.pdf", "content": "Some content"}],
+            scope="property",
+        )
+        assert "Document 0" not in result
+
+    def test_region_scope_multi_facts_in_context(self):
+        """REGION scope injects facts for all properties in region."""
+        result = format_context(
+            [],
+            property_ids=["la_fontaine", "avondrood", "pink_door"],
+            scope="region",
+        )
+        assert "Document 0" in result
+        assert "La Fontaine" in result
+        assert "Avondrood" in result
+        assert "Pink Door" in result
+
+    def test_cross_property_facts_in_context(self):
+        """CROSS_PROPERTY scope injects facts for compared properties."""
+        result = format_context(
+            [],
+            property_ids=["la_fontaine", "pod_camps_bay"],
+            scope="cross_property",
+        )
+        assert "Document 0" in result
+        assert "10:30" in result  # La Fontaine check-out
+        assert "11:00" in result  # POD check-out
+
+    def test_group_scope_all_facts_in_context(self):
+        """GROUP scope injects facts for all known properties."""
+        result = format_context([], scope="group")
+        assert "Document 0" in result
+        assert "La Fontaine" in result
+        assert "POD Camps Bay" in result
+        assert "Camp Figtree" in result
+
+    def test_no_scope_no_facts(self):
+        """No scope → no facts injection."""
+        result = format_context(
+            [{"source_file": "test.pdf", "content": "Some content"}],
+        )
+        assert "Document 0" not in result

@@ -22,9 +22,8 @@ from src.agent.prompts import (
     build_property_list,
     build_scope_instructions,
     format_context,
-    format_history,
 )
-from src.agent.session import load_session, save_session
+from src.agent.session import SessionData, load_session, save_session
 from src.cache.response_cache import (
     get_cached_response,
     get_cached_retrieval,
@@ -210,10 +209,6 @@ async def resolve_node(
     )
     state["conversation_history"] = session.conversation_history
 
-    # Store session ref for later save
-    state["_session"] = session  # type: ignore[typeddict-unknown-key]
-    state["_redis"] = redis_client  # type: ignore[typeddict-unknown-key]
-
     return state
 
 
@@ -288,6 +283,7 @@ async def retrieve_node(
         property_ids=property_ids,
         region=region,
         sparse_vector=sparse_vector,
+        query=message,
     )
 
     # Re-rank with Jina (falls back to local ranker if unconfigured)
@@ -317,7 +313,11 @@ async def retrieve_node(
     return state
 
 
-async def generate_node(state: AgentState) -> AgentState:
+async def generate_node(
+    state: AgentState,
+    *,
+    redis_client: Redis,
+) -> AgentState:
     """Node 3: Generate response using LLM (single async call).
 
     Checks the response cache first (async Redis). On miss, calls the
@@ -333,10 +333,13 @@ async def generate_node(state: AgentState) -> AgentState:
     scope = state.get("scope", "group")
     can_cache = not _has_conversation_history(state)
 
+    # Load session for later save
+    session = await load_session(redis_client, state.get("session_id") or None)
+
     # ── Response cache check (async) ─────────────────────────────────── #
     if can_cache:
         cached = await get_cached_response(
-            state.get("_redis"),  # type: ignore[arg-type]
+            redis_client,
             message,
             active_pid,
             scope,
@@ -346,7 +349,7 @@ async def generate_node(state: AgentState) -> AgentState:
             state["response"] = cached["response"]
             state["sources"] = cached["sources"]
             state["cache_hit"] = True
-            await _save_session(state)
+            await _save_session(state, redis=redis_client, session=session)
             return state
 
     # ── Normal LLM generation (async) ────────────────────────────────── #
@@ -387,6 +390,8 @@ async def generate_node(state: AgentState) -> AgentState:
     scope_instructions = build_scope_instructions(
         scope,
         property_name=property_name,
+        property_id=active_pid,
+        property_ids=state.get("resolved_properties"),
         location=location,
         region=region_name,
         property_names=property_names_str,
@@ -395,13 +400,17 @@ async def generate_node(state: AgentState) -> AgentState:
         is_sparse=is_sparse,
     )
 
-    context_str = format_context(chunks)
-    history_str = format_history(state.get("conversation_history", []))
+    context_str = format_context(
+        chunks,
+        property_id=active_pid,
+        property_ids=state.get("resolved_properties"),
+        scope=scope,
+    )
+    conversation_history = state.get("conversation_history", [])
 
     # Inject booking progress if we have details
-    session = state.get("_session")  # type: ignore[typeddict-item]
     booking_progress = ""
-    if session and session.booking_details and _has_booking_intent(state["message"]):
+    if session.booking_details and _has_booking_intent(state["message"]):
         booking = session.booking_details
         parts = []
         if booking.get("property"):
@@ -433,20 +442,29 @@ async def generate_node(state: AgentState) -> AgentState:
         property_list=build_property_list(),
         scope_instructions=scope_instructions,
         context=context_str,
-        history=history_str,
     )
 
     if booking_progress:
         system_message += booking_progress
 
+    # Build LLM messages: system + real conversation history + current user message
+    # Using actual user/assistant message pairs (not text block) gives the LLM
+    # much better conversation continuity than embedding history in system prompt.
+    llm_messages: list[dict] = [{"role": "system", "content": system_message}]
+
+    # Add conversation history as real chat messages (last 10)
+    recent_history = conversation_history[-10:] if conversation_history else []
+    for msg in recent_history:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if role in ("user", "assistant") and content:
+            llm_messages.append({"role": role, "content": content})
+
+    # Current user message
+    llm_messages.append({"role": "user", "content": state["message"]})
+
     # LLM call with retry on transient errors
-    state["response"] = await _invoke_llm(
-        llm,
-        [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": state["message"]},
-        ],
-    )
+    state["response"] = await _invoke_llm(llm, llm_messages)
 
     sources = list({c["source_file"] for c in chunks if c.get("source_file")})
     state["sources"] = sources
@@ -456,8 +474,7 @@ async def generate_node(state: AgentState) -> AgentState:
     metrics.record_query(scope)
 
     # ── Response cache store (async) ─────────────────────────────────── #
-    redis_client = state.get("_redis")  # type: ignore[typeddict-item]
-    if can_cache and redis_client:
+    if can_cache:
         await set_cached_response(
             redis_client,
             message,
@@ -467,7 +484,7 @@ async def generate_node(state: AgentState) -> AgentState:
             sources=sources,
         )
 
-    await _save_session(state)
+    await _save_session(state, redis=redis_client, session=session)
     return state
 
 
@@ -514,19 +531,21 @@ def _extract_booking_details(message: str, existing: dict | None = None) -> dict
     return details if details else None
 
 
-async def _save_session(state: AgentState) -> None:
+async def _save_session(
+    state: AgentState,
+    *,
+    redis: Redis,
+    session: SessionData,
+) -> None:
     """Save session to Redis (extracted to avoid duplication)."""
-    session = state.get("_session")  # type: ignore[typeddict-item]
-    redis_client = state.get("_redis")  # type: ignore[typeddict-item]
-    if session and redis_client:
-        session.active_property = state.get("active_property")
-        # Save region for session continuity
-        if state.get("resolved_region"):
-            session.active_region = state["resolved_region"]
-        # Extract and save booking details from user message
-        booking = _extract_booking_details(state["message"], session.booking_details)
-        if booking:
-            session.booking_details = booking
-        session.add_message("user", state["message"])
-        session.add_message("assistant", state["response"])
-        await save_session(redis_client, session)
+    session.active_property = state.get("active_property")
+    # Save region for session continuity
+    if state.get("resolved_region"):
+        session.active_region = state["resolved_region"]
+    # Extract and save booking details from user message
+    booking = _extract_booking_details(state["message"], session.booking_details)
+    if booking:
+        session.booking_details = booking
+    session.add_message("user", state["message"])
+    session.add_message("assistant", state["response"])
+    await save_session(redis, session)

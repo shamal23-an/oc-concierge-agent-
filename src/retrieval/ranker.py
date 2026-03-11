@@ -47,6 +47,7 @@ _QUERY_TYPE_KEYWORDS: dict[str, list[str]] = {
 }
 
 _DOC_TYPE_BOOST = 0.08
+_DOC_TYPE_BOOST_STRONG = 0.20  # For high-intent matches (e.g. "rates" query → rates doc)
 _TEMPORAL_BOOST = 0.1
 _TEMPORAL_PENALTY = -0.15
 
@@ -126,6 +127,8 @@ def rank_chunks(
 
     settings = get_settings()
     relevant_doc_types = _detect_query_doc_types(query) if query else set()
+    # High-intent doc types get a stronger boost (rates, spa, directions)
+    is_high_intent = bool(relevant_doc_types)
 
     scored: list[tuple[float, RetrievedChunk]] = []
     seen_prefixes: set[str] = set()
@@ -146,7 +149,8 @@ def rank_chunks(
         # Boost chunks whose document_type matches the query intent
         chunk_doc_type = chunk.get("metadata", {}).get("document_type", "")
         if chunk_doc_type and chunk_doc_type in relevant_doc_types:
-            score += _DOC_TYPE_BOOST
+            # Strong boost for rate/spa/direction queries where doc_type aligns
+            score += _DOC_TYPE_BOOST_STRONG if is_high_intent else _DOC_TYPE_BOOST
 
         # Temporal boost/penalty
         score += _temporal_score_adjust(chunk.get("metadata", {}))
@@ -156,11 +160,15 @@ def rank_chunks(
     # Sort by score descending
     scored.sort(key=lambda x: x[0], reverse=True)
 
-    # Enforce source diversity
-    scored = _enforce_diversity(scored, max_per_source=settings.max_chunks_per_source)
+    # Enforce source diversity (relax for rate queries to allow multiple rate chunks)
+    max_per_src = settings.max_chunks_per_source
+    if "rates" in relevant_doc_types:
+        max_per_src = max(max_per_src, 4)
+    scored = _enforce_diversity(scored, max_per_source=max_per_src)
 
-    # Apply score gap detection
-    scored = _apply_score_gap(scored, gap_threshold=settings.score_gap_threshold)
+    # Apply score gap detection (skip for high-intent queries — rates, etc.)
+    if not is_high_intent:
+        scored = _apply_score_gap(scored, gap_threshold=settings.score_gap_threshold)
 
     return [chunk for _, chunk in scored]
 
@@ -169,7 +177,7 @@ async def rerank_chunks(
     query: str,
     chunks: list[RetrievedChunk],
     *,
-    top_k: int = 5,
+    top_k: int = 7,
 ) -> list[RetrievedChunk]:
     """Re-rank chunks using Jina Reranker API.
 
